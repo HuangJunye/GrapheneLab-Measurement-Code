@@ -49,7 +49,7 @@ class MControl():
     
     def __init__(self):
         # Connect visa to the magnet
-        self.Visa = VisaSubs.InitializeSerial("ASRL5", term_chars = "\\n")
+        self.Visa = VisaSubs.InitializeSerial("ASRL2", term_chars = "\\n")
         # Open the socket
         address = ('localhost',18861)
         self.Server = SocketUtils.SockServer(address)
@@ -201,8 +201,10 @@ class MControl():
             Valid = 1
         elif Answer == "INVALID":
             Valid = 0
+	time.sleep(0.1)
         self.MagnetReadHeater()
-        if self.Heater != HeaterBefore:
+	HeaterAfter = self.Heater
+        if HeaterAfter != HeaterBefore:
             print "Heater switched ... locking for 2 minutes..."
             self.Lock = True
             self.LockTime = datetime.now()
@@ -355,7 +357,7 @@ class MControl():
                         print "Got new set point from socket %.2f T" % self.TargetField
             except:
                 pass
-            
+
         if Msg[0] == "SWP":
             # Message has form "SWP TargetField Rate TargetHeater"
             #print Msg
@@ -363,13 +365,13 @@ class MControl():
                 NewField = float(Msg[1])
 		NewHeater = int(Msg[3])
                 NewHeater = bool(NewHeater)
-                self.Rate = float(Msg[2])
+                self.Rate = float(Msg[2]) * self.AToB
                 if (NewField != self.TargetField) or (NewHeater != self.TargetHeater):
                     self.TargetField = NewField
                     self.TargetHeater = NewHeater
                     self.UpdateReady()
                     if not self.Ready:
-                        print "Got new sweep point from socket to %.2f T at %.2f A/min" % (self.TargetField,self.TargetRate)
+                        print "Got new sweep point from socket to %.2f T at %.2f T/min" % (self.TargetField,self.Rate/self.AToB)
             except:
                 pass
             

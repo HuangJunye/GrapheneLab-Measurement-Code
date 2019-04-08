@@ -228,51 +228,50 @@ class k2400:
 		self.Name = "Keithley 2400"
 		self.Address = address
 		self.Visa = VisaSubs.InitializeGPIB(address,0,term_chars = "\\n")
-		# Other 6430 properties
-		self.Compliance = 0.0
-		self.Source = "VOLT"
-		self.Output = False
-		self.Visa.write(":OUTP 0")
-		self.Data = [0.0 ,0.0]
-		self.Sense = []
-		self.RampStep = 0.1
-		self.ColumnNames = "V (V), I (A)"
-		self.DataColumn = 0
 
 	######################################
 	# Initializate as voltage source
 	#######################################
 
-	def InitializeVoltage(self,Compliance = 105e-9,RampStep = 0.1,AutoRange = False):
+	def InitializeVoltage(self,Compliance = 105e-9,
+			RampStep = 0.1,AutoRange = False,
+			reset = True):
 
-		self.Compliance = Compliance
+		self.Source = "VOLT"
 		self.RampStep = RampStep
 		self.ColumnNames = "V (V), I (A)"
 		self.DataColumn = 1
 		self.Source = "VOLT"
 		self.Sense = "CURR"
-		# A bunch of commands to configure the 6430
-		self.Visa.write("*RST")
-		time.sleep(.1)
-		self.Visa.write(":SOUR:FUNC:MODE VOLT")
-		# Configure the auto zero (reference)
-		self.Visa.write(":SYST:AZER:STAT ON")
-		self.Visa.write(":SYST:AZER:CACH:STAT 1")
-		self.Visa.write(":SYST:AZER:CACH:RES")
+		self.Data = [0.0 ,0.0]
 
-		# Disable concurrent mode, measure I and V (not R)
-		self.Visa.write(":SENS:FUNC:CONC 1")
-
-		self.Visa.write(":SENS:FUNC:ON \"VOLT\",\"CURR\"")
-		self.Visa.write(":FORM:ELEM VOLT,CURR")
-
-		if AutoRange:
-			self.Visa.write(":SENS:CURR:RANG:AUTO 0")
+		if reset:
+			self.Compliance = Compliance
+			self.Output = False
+			self.Visa.write(":OUTP 0")
+					# A bunch of commands to configure the 6430
+			self.Visa.write("*RST")
+			time.sleep(.1)
+			self.Visa.write(":SOUR:FUNC:MODE VOLT")
+			# Configure the auto zero (reference)
+			self.Visa.write(":SYST:AZER:STAT ON")
+			self.Visa.write(":SYST:AZER:CACH:STAT 1")
+			self.Visa.write(":SYST:AZER:CACH:RES")
+			# Disable concurrent mode, measure I and V (not R)
+			self.Visa.write(":SENS:FUNC:CONC 1")
+			self.Visa.write(":SENS:FUNC:ON \"VOLT\",\"CURR\"")
+			self.Visa.write(":FORM:ELEM VOLT,CURR")
+			if AutoRange:
+				self.Visa.write(":SENS:CURR:RANG:AUTO 0")
+			else:
+				self.Visa.write(":SENS:CURR:RANG 105e-9")
+			self.Visa.write(":SENS:CURR:PROT:LEV %.3e" % self.Compliance)
 		else:
-			self.Visa.write(":SENS:CURR:RANG 105e-9")
+			self.Output = bool(int(self.Visa.ask(":OUTP:STAT?")))
+			self.Source = "VOLT"
+			self.Compliance = float(self.Visa.ask(":SENS:CURR:PROT:LEV?"))
+			self.ReadData()
 	
-		self.Visa.write(":SENS:CURR:PROT:LEV %.3e" % self.Compliance)
-		
 		return
 	
 	###########################################
@@ -379,14 +378,14 @@ class k6221:
 			self.Amplitude = self.ReadNumeric(":SOUR:WAVE:AMPL?")
 			self.Offset = self.ReadNumeric(":SOUR:WAVE:OFFS?")
 			self.Phase = self.ReadNumeric(":SOUR:WAVE:PMAR?")
-			self.TriggerPin = 2
+			self.TriggerPin = 5
 		else:
 			self.Compliance = 0.0
 			self.Frequency = 9.2
 			self.Amplitude = 0.0 # Amperes
 			self.Offset = 0.0
 			self.Phase = 0.0 # position of the phase marker
-			self.TriggerPin = 2 # pin to write the trigger
+			self.TriggerPin = 5 # pin to write the trigger
 			self.Visa.write(":SOUR:CLE:IMM")
 		self.RampStep = 10e-9
 		self.Source = "CURR"
@@ -423,7 +422,8 @@ class k6221:
 			else:
 				self.Visa.write(":SOUR:WAVE:RANG FIX")
 	
-			self.Visa.write(":TRIG:OLIN 4")
+			
+			#self.Visa.write(":TRIG:OLIN 4")
 			self.Visa.write(":SOUR:WAVE:PMAR:OLIN %d" % self.TriggerPin)	
 			self.Visa.write(":SOUR:WAVE:PMAR:STAT ON")
 			self.Visa.write(":SOUR:WAVE:PMAR %.1f" % self.Phase)

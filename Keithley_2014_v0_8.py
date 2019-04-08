@@ -21,7 +21,7 @@ Classes for:
 
 """
 
-import rpyc
+# import rpyc
 import visa as visa
 import VisaSubs as VisaSubs
 import string as string
@@ -492,9 +492,9 @@ class k2400:
 	# Set source
 	##################################################
 
-	#def SetOutput(self,Level):
-	#	self.Visa.write(":SOUR:CURR %.4e" % Level)
-	#	pass
+	def SetOutput(self,Level):
+		self.Visa.write(":SOUR:CURR %.4e" % Level)
+		pass
 
 	#################################################
 	# Switch the output
@@ -813,6 +813,7 @@ class k6221k2182a:
 				self.SetOutput(VFinish)
 				self.SwitchOutput()
 		return
+
 
 class k2182a:
 	def __init__(self,address):
