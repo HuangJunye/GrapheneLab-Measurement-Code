@@ -91,25 +91,6 @@ class TControl():
 		self.LastStatusTime = datetime.now()
 		self.Sensor = "SO703"
 
-		# Initialize a pid controller
-		# PID Values used:
-		# P=10 (20 T>800) I=0.5
-		# P=200 I=10 (July 2014, for heating up to RT)
-		# P-40 I=5 (May 2014, works better at lower cooling power?)
-		# P=20 I=5 (March 2014)
-		# P=10 I=1 (March 2014) : doesn't set correctly
-		# P=5  I=10 (from earlier file): don't know about performance
-		
-		# For poor base T (>200mK)
-		self.pid = PIDControl.PID(P=20.,I=.5,D=0,Derivator=0,Integrator=0,Integrator_max=60000,Integrator_min=-2000)
-
-		# If the fridge reaches good base T
-		#self.pid = PIDControl.PID(P=5.,I=.25,D=0.1,Derivator=0,Integrator=0,Integrator_max=40000,Integrator_min=-2000)
-		
-		# For high heater power
-		#self.pid = PIDControl.PID(P=10000.,I=10.,D=0,Derivator=0,Integrator=0,Integrator_max=40000,Integrator_min=-2000)
-		self.PIDOut = 0
-
 		return
 
 
@@ -131,8 +112,8 @@ class TControl():
 	def ReadPico(self):
 		# Get the resistance of the current channel of the picowatt
 		self.PicoVisa.write("ADC")
-		time.sleep(0.45)
-		Answer = self.PicoVisa.ask("RES?")
+		time.sleep(0.4)
+		Answer = self.PicoVisa.ask("RES ?")
 		Answer = Answer.strip()
 		try:
 			self.Resistance = float(Answer)
@@ -142,7 +123,7 @@ class TControl():
 		return
 
 	def ReadPicoRange(self):
-		Answer = self.PicoVisa.ask("RAN?")
+		Answer = self.PicoVisa.ask("RAN ?")
 		Answer = Answer.strip()
 		self.PicoRange = int(Answer)
 		return
@@ -203,7 +184,23 @@ class TControl():
 		
 		if Msg[0] == "SET":
 			try:
-				NewSet = float(Msg[1])
+					# if we are sweeping we do some things specific to the sweep
+		if control.SweepMode:
+			control.SweepControl()
+
+		# check if we should send an update
+		UpdateTime = datetime.now() - control.LastStatusTime
+		if UpdateTime.seconds/60.0 >= control.StatusInterval:
+			control.PrintStatus()
+		# if we are sweeping we do some things specific to the sweep
+		if control.SweepMode:
+			control.SweepControl()
+
+		# check if we should send an update
+		UpdateTime = datetime.now() - control.LastStatusTime
+		if UpdateTime.seconds/60.0 >= control.StatusInterval:
+			control.PrintStatus()
+	NewSet = float(Msg[1])
 				# Only interpret new setpoints if the change is >50mK
 				if abs(self.SetTemp-NewSet) > 0.05:
 					self.SetTemp = NewSet
@@ -217,6 +214,14 @@ class TControl():
 		if Msg[0] == "SWP":
 			try:
 				self.SweepFinish = float(Msg[1])
+		# if we are sweeping we do some things specific to the sweep
+		if control.SweepMode:
+			control.SweepControl()
+
+		# check if we should send an update
+		UpdateTime = datetime.now() - control.LastStatusTime
+		if UpdateTime.seconds/60.0 >= control.StatusInterval:
+			control.PrintStatus()
 				if abs(self.SweepFinish - self.SetTemp) > 0.05:
 					self.SweepStart = self.SetTemp
 					self.SweepRate = abs(float(Msg[2]))
@@ -292,7 +297,7 @@ class TControl():
 		return
 
 	def PrintStatus(self):
-		StatusString = "%s = %.2f mK; PID output = %d; " % (self.Sensor,self.Temperature,self.PIDOut)
+		StatusString = "%s = %.2f mK; " % (Self.Sensor,self.Temperature)
 		StatusString += "Status message = %d\n" % self.StatusMsg
 		print StatusString
 		self.LastStatusTime = datetime.now()
@@ -323,8 +328,6 @@ if __name__ == '__main__':
 
 	control = TControl()
 	control.SetPicoChannel(3)
-	control.Sensor = "SO703"
-
 
 	# Main loop
 	control.ReadTCS()
@@ -339,7 +342,7 @@ if __name__ == '__main__':
 		
 		# Push the reading to clients
 		for j in control.Server.handlers:
-			j.to_send = ",%.3f %d" % (control.Temperature, control.StatusMsg)
+			j.to_send = ",%.3f %d" % (control.Temperature, control.Status)
 			SocketMsg = j.received_data
 			if SocketMsg:
 				control.ReadMsg(SocketMsg)
@@ -355,30 +358,26 @@ if __name__ == '__main__':
 		UpdateTime = datetime.now() - control.LastStatusTime
 		if UpdateTime.seconds/60.0 >= control.StatusInterval:
 			control.PrintStatus()
-	
+
+		
 		NEWPID = pid.update(control.Temperature)
-		try:
-			control.PIDOut = int(NEWPID)
-		except:
-			control.PIDOut = 0
-			pass
+		NEWPID = int(NEWPID)
+		if NEWPID < 0:
+			NEWPID = 0
+		if NEWPID > control.MaxCurrent:
+			NEWPID = control.MaxCurrent
 
-		if control.PIDOut < 0:
-			control.PIDOut = 0
-		elif control.PIDOut > control.MaxCurrent:
-			control.PIDOut = control.MaxCurrent
-
-		if control.PIDOut > 0 and control.TCSHeater[2] == 0:
+		if NEWPID > 0 and control.TCSHeater[2] == 0:
 			# status is go to set and heater is off --> turn it on
 			control.TCSSwitchHeater(2)
 			control.ReadTCS()
-		elif control.PIDOut <= 0 and control.TCSHeater[2] == 1:
+		elif NEWPID <= 0 and control.TCSHeater[2] == 1:
 			# status is go to set and heater is off --> turn it on
 			control.TCSSwitchHeater(2)
 			control.ReadTCS()
-		elif control.PIDOut >= 0 and control.TCSHeater[2] == 1:
-			control.SetTCS(2,control.PIDOut)
-			control.TCSCurrent[2] = control.PIDOut
+		elif control.Status >= 0 and control.TCSHeater[2] == 1:
+			control.SetTCS(2,NEWPID)
+			control.TCSCurrent[2] = NEWPID
 
 		time.sleep(0.4)
 

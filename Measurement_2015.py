@@ -76,7 +76,7 @@ def DoDeviceSweep(GraphProc,rpg,DataFile,SweepInst,ReadInst,
 		TSet = -1,
 		Timeout = -1, Wait = 0.5,
 		ReturnData = False,MakePlot=True,
-		SocketDataNumber=2,					# 5 for 9T, 2 for Dilution fridge
+		SocketDataNumber=5,					# 5 for 9T, 2 for Dilution fridge
 		Comment = "No comment!", NetworkDir = "Z:\\DATA"):
 
 	# Bind sockets 
@@ -113,7 +113,7 @@ def DoDeviceSweep(GraphProc,rpg,DataFile,SweepInst,ReadInst,
 	
 	NowTime = datetime.now()
 	Remaining = Timeout*60.0 - float((NowTime-SetTime).seconds)
-	while (TSocket[1] != 1) and (Remaining > 0):
+	while (TSocket[4] != 1) and (Remaining > 0):
 		NowTime = datetime.now()
 		Remaining = Timeout*60.0 - float((NowTime-SetTime).seconds)
 		print "Waiting for temperature ... time remaining = %.2f minutes" % (Remaining/60.0)
@@ -192,8 +192,8 @@ def DoDeviceSweep(GraphProc,rpg,DataFile,SweepInst,ReadInst,
 		TSocket = MeasurementUtils.SocketRead(TClient, TSocket)
 		MSocket = MeasurementUtils.SocketRead(MClient, MSocket)
 
-		DataVector[:,0] = MSocket[0]
-		DataVector[:,1:SocketDataNumber] = TSocket[0]
+		DataVector[:,0] = MSocket[:-1]
+		DataVector[:,1:SocketDataNumber] = TSocket[:-1]
 		DataVector[:,SocketDataNumber] = v
 
 		for j in range(Sample):
@@ -279,7 +279,7 @@ def DoFridgeSweep(GraphProc,rpg,DataFile,
 		Persist = False, # Magnet final state
 		Delay = 0.0, Sample = 1,
 		Timeout = -1, Wait = 0.5, MaxOverTime = 5,
-		ReturnData = False, SocketDataNumber = 2,
+		ReturnData = False, SocketDataNumber = 5,
 		Comment = "No comment!", NetworkDir = "Z:\\DATA",
 		IgnoreMagnet = False):
 
@@ -329,7 +329,7 @@ def DoFridgeSweep(GraphProc,rpg,DataFile,
 	
 	NowTime = datetime.now()
 	Remaining = Timeout*60.0 - float((NowTime-SetTime).seconds)
-	while (TSocket[1] != 1) and (Remaining > 0):
+	while (TSocket[4] != 1) and (Remaining > 0):
 		NowTime = datetime.now()
 		Remaining = Timeout*60.0 - float((NowTime-SetTime).seconds)
 		print "Waiting for temperature ... time remaining = %.2f minutes" % (Remaining/60.0)
@@ -430,7 +430,7 @@ def DoFridgeSweep(GraphProc,rpg,DataFile,
 			FridgeStatus = TSocket[-1]
 
 		DataVector[:,0] = MSocket[0]
-		DataVector[:,1:SocketDataNumber] = TSocket[0]
+		DataVector[:,1:SocketDataNumber] = TSocket[:-1]
 
 		for j in range(Sample):
 		
@@ -449,7 +449,7 @@ def DoFridgeSweep(GraphProc,rpg,DataFile,
 		if BSweep:
 			ToPlot[0] = DataVector[-1,0]
 		else:
-			ToPlot[0] = DataVector[-1,1]
+			ToPlot[0] = DataVector[-1,2]
 		for j in range(NRead):
 			ToPlot[j+1] = DataVector[-1,StartColumn[j]+ReadInst[j].DataColumn]
 	
@@ -476,7 +476,7 @@ def DoFridgeSweep(GraphProc,rpg,DataFile,
 		for i,v in enumerate(SetInst):
 			print "Ramping %s to %.2e" % (v.Name, FinishValue[i])
 			v.Ramp(FinishValue[i])
-	
+			
 	if ReturnData:
 		DataList = [None]*(NRead+1)
 		DataList[0] = PlotData[0::NRead+1]

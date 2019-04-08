@@ -24,6 +24,7 @@ Classes for:
 import rpyc
 import visa as visa
 import VisaSubs as VisaSubs
+
 import string as string
 import re as re
 from collections import namedtuple
@@ -68,7 +69,7 @@ class k6430:
 	def InitializeVoltage(self,Compliance = 105e-9,
 				Median = 0,Repetition =1, Moving= 1,
 				Integration=1,Delay=0.0,Trigger=0,
-				RampStep = 0.1,Range=105e-9,AutoRange = False, AutoFilter = False, AutoDelay = False):
+				RampStep = 0.1,Range=105e-9,AutoRange = False, AutoFilter = False, AutoDelay = False, SourceRange=0.2):
 
 		self.ColumnNames = "V (V), I (A)"
 		self.DataColumn = 1
@@ -76,6 +77,8 @@ class k6430:
 		self.Source = "VOLT"
 		self.Sense = "CURR"
 		self.Moving = Moving
+		self.SourceRange= SourceRange
+
 		# Special variables for 6430
 		self.Median = Median
 		self.Repetition = Repetition
@@ -99,6 +102,8 @@ class k6430:
 
 		self.Visa.write(":SENS:FUNC:ON \"VOLT\",\"CURR\"")
 		self.Visa.write(":FORM:ELEM VOLT,CURR")
+		
+		self.Visa.write("SOUR:VOLT:RANG %.2e" % self.SourceRange)
 		
 		if AutoRange:
 			self.Visa.write(":SENS:CURR:RANG:AUTO 1")
@@ -317,6 +322,7 @@ class k2400:
 		self.Compliance = Compliance
 		self.RampStep = RampStep
 		self.Range=Range
+
 		self.ColumnNames = "V (V), I (A)"
 		self.DataColumn = 1
 		self.Source = "VOLT"
@@ -342,6 +348,7 @@ class k2400:
 			self.Visa.write(":SENS:CURR:RANG:AUTO 0")
 		else:
 			self.Visa.write(":SENS:CURR:RANG %.3e" % Range)
+
 	
 		self.Visa.write(":SENS:CURR:PROT:LEV %.3e" % self.Compliance)
 		

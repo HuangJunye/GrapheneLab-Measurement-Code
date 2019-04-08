@@ -42,8 +42,9 @@ class k6430:
 	def __init__(self,address):
 		self.Name = "Keithley 6430"
 		self.Address = address
-		self.Visa = VisaSubs.InitializeGPIB(address,0,term_chars = "\\n")
-		# Other 6430 properties
+		self.Visa = VisaSubs.InitializeGPIB(address,0)
+		
+		# Other 6430 properties #Added 11 Aug by Rosti, because this version didn't have Trigger in initialization in InitializeCurrent
 		self.Compliance = 0.0
 		self.Integration = 1 # Defaults to 1
 		self.Median = 0 # Defaults to 0 (no medianing)
@@ -99,13 +100,13 @@ class k6430:
 
 		self.Visa.write(":SENS:FUNC:ON \"VOLT\",\"CURR\"")
 		self.Visa.write(":FORM:ELEM VOLT,CURR")
-		
+
+    self.Visa.write(":SENS:CURR:PROT:LEV %.3e" % self.Compliance)	
+
 		if AutoRange:
 			self.Visa.write(":SENS:CURR:RANG:AUTO 1")
 		else:
 			self.Visa.write(":SENS:CURR:RANG %.2e" % self.Range)
-
-		self.Visa.write(":SENS:CURR:PROT:LEV %.3e" % self.Compliance)
 
 #		# Set some filters
 		

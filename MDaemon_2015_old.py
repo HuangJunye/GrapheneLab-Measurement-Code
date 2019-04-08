@@ -25,7 +25,7 @@ last edited :  Feb 2014
 import SocketUtils as SocketUtils
 import logging
 import visa as visa
-import VisaSubs as VisaSubs
+import VisaSubs_old as VisaSubs
 import string as string
 import re as re
 import time
@@ -49,7 +49,7 @@ class MControl():
     
     def __init__(self):
         # Connect visa to the magnet
-        self.Visa = VisaSubs.InitializeSerial("ASRL11::INSTR")
+        self.Visa = VisaSubs.InitializeSerial("ASRL6", term_chars="\\n")
         # Open the socket
         address = ('localhost',18861)
         self.Server = SocketUtils.SockServer(address)
@@ -316,7 +316,7 @@ class MControl():
 	    if abs(self.Field-self.TargetField) < 0.004:
 	        AtTarget = True
 	    else:
-		      AtTarget = False
+		AtTarget = False
         else:
             if (abs((self.Field-self.TargetField)/self.TargetField) <= 0.0035):
                 AtTarget = True

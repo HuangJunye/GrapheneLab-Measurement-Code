@@ -11,33 +11,21 @@ last edited : July 2013
 
 Functions written:
 	InitializeGPIB
-	InitializeSerial
+	InitialIzeSerial
 
 """
 import visa as visa
 
 # initalize GPIB devices using PyVisa
-def InitializeGPIB(address, board, QueryID=True, ReadTermination = "LF"
-                    , **kwargs):
-	rm = visa.ResourceManager()
-        GPIBName = "GPIB%d::%d::INSTR" % (board,address)
-       # print GPIBName
-        try:
-		GPIBVisa = rm.open_resource(GPIBName)
-                if ReadTermination == "LF":
-                   GPIBVisa.read_termination = "\n"
-                   GPIBVisa.write_termination = "\n"                    
-                elif ReadTermination == "CR":
-                    GPIBVisa.read_termination = "\r"
-                    GPIBVisa.write_termination = "\r"
-                elif ReadTermination == "CRLF":
-                    GPIBVisa.read_termination = "\r\n"
-                    GPIBVisa.write_termination = "\r\n"
+
+def InitializeGPIB(address, board, QueryID=True, **kwargs):
+	try:
+		GPIBVisa = visa.GpibInstrument(address,board)
 		for kw in kwargs.keys():
 			tmp = "".join(("GPIBVisa.",kw,"=\"",kwargs[kw],"\""))
 			exec(tmp)
 		if QueryID:
-			print GPIBVisa.query("*IDN?")
+			print GPIBVisa.ask("*IDN?")
 	except Exception:
 		print "Failed opening GPIB address %d\n" % address
 		GPIBVisa = None
@@ -52,7 +40,7 @@ def InitializeSerial(name,idn="*IDN?", **kwargs):
 		for kw in kwargs.keys():
 			tmp = "".join(("SerialVisa.",kw,"=\"",kwargs[kw],"\""))
 			exec(tmp)
-		print SerialVisa.query(idn)
+		print SerialVisa.ask(idn)
 	except Exception:
 		print "Failed opening serial port %s\n" % name
 		SerialVisa = None

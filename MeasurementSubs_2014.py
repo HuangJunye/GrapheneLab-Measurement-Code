@@ -64,8 +64,8 @@ def InitializeSockets():
 	TClient = SocketUtils.SockClient('localhost', 18871)
 	MClient = SocketUtils.SockClient('localhost', 18861)
 	time.sleep(4)
-	MSocket = [[0.0], 0]
-	TSocket = [[0.0,0.0,0.0,0.0], 0]
+	MSocket = [0.0, 0]
+	TSocket = [0.0, 0.0, 0.0, 0.0, 0]
 	TSocket = SocketRead(TClient, TSocket)
 	MSocket = SocketRead(MClient, MSocket)
 	
@@ -80,16 +80,15 @@ def SocketRead(Client,OldSocket = []):
 		#print SocketString
 		SocketString = SocketString.split(",")[-1]
 		SocketString = SocketString.split(" ")
-		#if len(SocketString)==2:
-		Value = SocketString[:-1]
-		Status = SocketString[-1]
-		if len(Value) == len(OldSocket[0]):
+		if len(SocketString)==len(Socket):
+			Value = SocketString[:-1]
+			Status = SocketString[-1]
 			try:
 				for i,v in enumerate(Value):
 					Value[i] = float(v)
 				Status = int(Status)
-				Socket[0] = Value
-				Socket[1] = Status
+				Socket[:-1] = Value
+				Socket[-1] = Status
 			except:
 				pass
 
@@ -102,8 +101,9 @@ def SocketWrite(Client,Msg):
 	Client.to_send = "-"
 	asyncore.loop(count=1,timeout=0.001)
 
-
-def OpenCSVFile(FileName,StartTime,ReadInst,SweepInst=[],SetInst=[],Comment = "No comment!\n"):
+def OpenCSVFile(FileName,StartTime,ReadInst,
+		SweepInst=[],SetInst=[],Comment = "No comment!\n",
+		NetworkDir = "Z:\\DATA"):
 	
 	# Setup the directories
 	# Try to make a directory called Data in the CWD
@@ -143,8 +143,8 @@ def OpenCSVFile(FileName,StartTime,ReadInst,SweepInst=[],SetInst=[],Comment = "N
 	# Write the starttime and a description of each of the instruments
 	FileWriter.writerow([StartTime])
 
-	ColumnString = "B (T), T-VTI (K), T Sample (K), Heater VTI (%), Heater Sample (%), "
-	
+	ColumnString = "B(T), TVTI (K), TProbe (K), VTI heater, Probe heater "
+
 	for Inst in SweepInst:
 		csvfile.write("".join(("SWEEP: ",Inst.Description())))
 		ColumnString = "".join((ColumnString,", ",Inst.Source))
