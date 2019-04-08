@@ -5,9 +5,9 @@
 
 Sub programs for operation of the PicoWatt and Leiden TCS to control temperature
 
-author : Eoin O'Farrell
-email : phyoec@nus.edu.sg
-last edited : August 2013
+original author : Eoin O'Farrell
+current author : Huang Junye
+last edited : Apr 2019
 
 
 	The daemon listens for commands to change the control loop or setpoint
@@ -27,16 +27,17 @@ ToDo:
 
 """
 
-import SocketUtils as SocketUtils
+import utils.SocketUtils as SocketUtils
 import logging
 import visa as visa
-import VisaSubs as VisaSubs
+import utils.VisaSubs as VisaSubs
 import string as string
 import re as res
 import time
 import numpy as np
 import asyncore
-import PIDControl
+import utils.PIDControl as PIDControl
+from scipy import interpolate
 from datetime import datetime
 
 class TControl():

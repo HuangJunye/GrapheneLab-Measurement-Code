@@ -8,9 +8,9 @@ The pot thermometer is read by the keithley 2700 at channel 109
 The pot calibration file is in D: eoin Thermometers
 The pot heater is on AOUT1 of the lakeshore 370
 
-author : Eoin O'Farrell
-email : c2doec@nus.edu.sg
-last edited : March 2016
+original author : Eoin O'Farrell
+current author : Huang Junye
+last edited : Apr 2019
 
 
 	The daemon listens for commands to change the control loop or setpoint
@@ -33,16 +33,16 @@ ToDo:
 	ReadAllTemperatures was updated. all temperatures are shown. Use only for cooling down process.
 """
 
-import SocketUtils as SocketUtils
+import utils.SocketUtils as SocketUtils
 import logging
 import visa as visa
-import VisaSubs as VisaSubs
+import utils.VisaSubs as VisaSubs
 import string as string
 import re as res
 import time
 import numpy as np
 import asyncore
-import PIDControl
+import utils.PIDControl as PIDControl
 from scipy import interpolate
 from datetime import datetime
 

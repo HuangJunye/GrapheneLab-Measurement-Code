@@ -5,9 +5,9 @@
 
 Sub programs for operation of Oxford Mercury iPS
 
-author : Eoin O'Farrell
-email : phyoec@nus.edu.sg
-last edited :  Feb 2014
+original author : Eoin O'Farrell
+current author : Huang Junye
+last edited : Apr 2019
 
 
 	The daemon listens for commands to change the field etc
@@ -34,10 +34,10 @@ Changes in Yaxis
 2) Change self.Rate & self.MaxRate to 5.5625 A/min
 """
 
-import SocketUtils as SocketUtils
+import utils.SocketUtils as SocketUtils
 import logging
 import visa as visa
-import VisaSubs as VisaSubs
+import utils.VisaSubs as VisaSubs
 import string as string
 import re as re
 import time
