@@ -75,9 +75,11 @@ def SocketRead(Client,OldSocket = []):
 	# Read the socket and parse the reply, the reply has 2 parts the message and the status
 	asyncore.loop(count=1,timeout=0.001)
 	SocketString = Client.received_data
+	print SocketString
 	Socket = OldSocket
 	if SocketString:
 		SocketString = SocketString.split(",")[-1]
+		print SocketString
 		SocketString = SocketString.split(" ")
 		if len(SocketString)==len(Socket):
 			Value = SocketString[:-1]

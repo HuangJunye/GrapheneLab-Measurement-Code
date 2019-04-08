@@ -42,24 +42,6 @@ class k6430:
 		self.Name = "Keithley 6430"
 		self.Address = address
 		self.Visa = VisaSubs.InitializeGPIB(address,0)
-		
-		# Other 6430 properties #Added 11 Aug by Rosti, because this version didn't have Trigger in initialization in InitializeCurrent
-		self.Compliance = 0.0
-		self.Integration = 1 # Defaults to 1
-		self.Median = 0 # Defaults to 0 (no medianing)
-		self.Repetition = 1 # Defaults to 1 (no averaging)
-		self.Delay = 0 # Defaults to 0 (second)
-		self.Trigger = 0
-		self.Source = "VOLT"
-		self.Output = False
-		self.Visa.write(":OUTP 0")
-		self.Data = [0.0 ,0.0]
-		self.Sense = []
-		self.RampStep = 0.1
-		self.ColumnNames = "V (V), I (A)"
-		self.DataColumn = 0
-		self.SourceColumn = 1
-		self.Range = 105e-9
 
 	######################################
 	# Initializate as voltage source
@@ -107,13 +89,12 @@ class k6430:
 		self.Visa.write(":SENS:FUNC:ON \"VOLT\",\"CURR\"")
 		self.Visa.write(":FORM:ELEM VOLT,CURR")
 		
-                self.Visa.write(":SENS:CURR:PROT:LEV %.3e" % self.Compliance)	
+		self.Visa.write(":SENS:CURR:PROT:LEV %.3e" % self.Compliance)		
 		if AutoRange:
 			self.Visa.write(":SENS:CURR:RANG:AUTO 1")
 		else:
 			self.Visa.write(":SENS:CURR:RANG %.2e" % self.Range)
-                
-	
+
 #		# Set some filters
 		
 		if AutoFilter:
@@ -173,12 +154,13 @@ class k6430:
 		self.Visa.write(":SENS:FUNC:ON \"VOLT\",\"CURR\"")
 		self.Visa.write(":FORM:ELEM VOLT,CURR")
 		
-		self.Visa.write(":SENS:VOLT:PROT:LEV %.3e" % self.Compliance)
-
 		if AutoRange:
 			self.Visa.write(":SENS:VOLT:RANG:AUTO 1")
 		else:
 			self.Visa.write(":SENS:VOLT:RANG %.2e" % self.Range)
+
+		self.Visa.write(":SENS:VOLT:PROT:LEV %.3e" % self.Compliance)
+
 #		# Set some filters
 		self.Visa.write(":SENS:CURR:NPLC %.2f" % self.Integration)
 	
@@ -436,7 +418,8 @@ class k2400:
 
 
 class k6221:
-	# The 6221 operates only as a source, these functions configure it as an AC source (WAVE mode)
+	# The 6221 operates only as a source,
+        # these functions configure it as an AC source (WAVE mode)
 	# and the measurement is made by the Lockin
 
 	def __init__(self,address):
@@ -449,7 +432,24 @@ class k6221:
 		Reply = self.Visa.ask(":OUTP:STAT?")
 		Reply = int(Reply)
 		self.Output = bool(Reply)
-		if self.Output:
+	
+		self.RampStep = 10e-9
+		self.Source = "CURR"
+		self.ColumnNames = "I (A)"
+		self.DataColumn = 0
+		self.Data = [self.Amplitude] # Amperes
+		# Move the trigger pin so we can set the phase marker to line 2
+		
+
+	#########################################
+	# Initializate as an AC sinusoidal source
+	#########################################
+
+	def InitializeWave(self,Compliance = 0.1,RampStep = 1e-9,AutoRange = True,
+				Frequency = 9.2,
+				Offset=0.0,Phase=0.0):
+
+                if self.Output:
 			self.Compliance = self.ReadNumeric(":SOUR:CURR:COMP?")
 			self.Frequency = self.ReadNumeric(":SOUR:WAVE:FREQ?")
 			self.Amplitude = self.ReadNumeric(":SOUR:WAVE:AMPL?")
@@ -464,21 +464,6 @@ class k6221:
 			self.Phase = 0.0 # position of the phase marker
 			self.TriggerPin = 2 # pin to write the trigger
 			self.Visa.write(":SOUR:CLE:IMM")
-		self.RampStep = 10e-9
-		self.Source = "CURR"
-		self.ColumnNames = "I (A)"
-		self.DataColumn = 0
-		self.Data = [self.Amplitude] # Amperes
-		# Move the trigger pin so we can set the phase marker to line 2
-		
-
-	######################################
-	# Initializate as voltage source
-	#######################################
-
-	def InitializeWave(self,Compliance = 0.1,RampStep = 1e-9,AutoRange = True,
-				Frequency = 9.2,
-				Offset=0.0,Phase=0.0):
 
 		self.ColumnNames = "I (A)"
 		self.DataColumn = 0

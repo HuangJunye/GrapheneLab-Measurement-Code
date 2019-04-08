@@ -348,7 +348,7 @@ if __name__ == '__main__':
 	# Initialize a PID controller
 
 	control = TControl()
-	control.SetPicoChannel(3)
+	control.SetPicoChannel(5)
 	control.Sensor = "SO703"
 
 	# Main loop

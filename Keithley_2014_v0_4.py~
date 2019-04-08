@@ -42,24 +42,6 @@ class k6430:
 		self.Name = "Keithley 6430"
 		self.Address = address
 		self.Visa = VisaSubs.InitializeGPIB(address,0)
-		
-		# Other 6430 properties #Added 11 Aug by Rosti, because this version didn't have Trigger in initialization in InitializeCurrent
-		self.Compliance = 0.0
-		self.Integration = 1 # Defaults to 1
-		self.Median = 0 # Defaults to 0 (no medianing)
-		self.Repetition = 1 # Defaults to 1 (no averaging)
-		self.Delay = 0 # Defaults to 0 (second)
-		self.Trigger = 0
-		self.Source = "VOLT"
-		self.Output = False
-		self.Visa.write(":OUTP 0")
-		self.Data = [0.0 ,0.0]
-		self.Sense = []
-		self.RampStep = 0.1
-		self.ColumnNames = "V (V), I (A)"
-		self.DataColumn = 0
-		self.SourceColumn = 1
-		self.Range = 105e-9
 
 	######################################
 	# Initializate as voltage source
@@ -107,13 +89,13 @@ class k6430:
 		self.Visa.write(":SENS:FUNC:ON \"VOLT\",\"CURR\"")
 		self.Visa.write(":FORM:ELEM VOLT,CURR")
 		
-                self.Visa.write(":SENS:CURR:PROT:LEV %.3e" % self.Compliance)	
+		
 		if AutoRange:
 			self.Visa.write(":SENS:CURR:RANG:AUTO 1")
 		else:
 			self.Visa.write(":SENS:CURR:RANG %.2e" % self.Range)
                 
-	
+                self.Visa.write(":SENS:CURR:PROT:LEV %.3e" % self.Compliance)		
 #		# Set some filters
 		
 		if AutoFilter:

@@ -41,7 +41,6 @@ import multiprocessing
 import numpy as np 
 
 import pyqtgraph as pg
-pg.setConfigOption("useWeave", False)
 import pyqtgraph.multiprocess as mp
 from pyqtgraph.Qt import QtCore, QtGui
 
@@ -56,7 +55,7 @@ from scipy import interpolate
 
 import VisaSubs as VisaSubs
 import SrsLia as LIA
-import Keithley_2014_v0_4 as keithley
+import Keithleys_2014_v0_4 as keithley
 import SocketUtils as SocketUtils
 import MeasurementSubs_2014 as MeasurementUtils
 
@@ -76,7 +75,6 @@ def DoDeviceSweep(GraphProc,rpg,DataFile,SweepInst,ReadInst,
 		TSet = -1,
 		Timeout = -1, Wait = 0.5,
 		ReturnData = False,MakePlot=True,
-		SocketDataNumber=5,					# 5 for 9T, 2 for Dilution fridge
 		Comment = "No comment!", NetworkDir = "Z:\\DATA"):
 
 	# Bind sockets 
@@ -113,7 +111,7 @@ def DoDeviceSweep(GraphProc,rpg,DataFile,SweepInst,ReadInst,
 	
 	NowTime = datetime.now()
 	Remaining = Timeout*60.0 - float((NowTime-SetTime).seconds)
-	while (TSocket[4] != 1) and (Remaining > 0):
+	while (TSocket[1] != 1) and (Remaining > 0):
 		NowTime = datetime.now()
 		Remaining = Timeout*60.0 - float((NowTime-SetTime).seconds)
 		print "Waiting for temperature ... time remaining = %.2f minutes" % (Remaining/60.0)
@@ -181,7 +179,7 @@ def DoDeviceSweep(GraphProc,rpg,DataFile,SweepInst,ReadInst,
 
 	# This is the main measurement loop
 
-	StartColumn, DataVector = MeasurementUtils.GenerateDataVector(SocketDataNumber,ReadInst,Sample,
+	StartColumn, DataVector = MeasurementUtils.GenerateDataVector(2,ReadInst,Sample,
 							SweepInst=True,SetValue = SetValue)
 	
 	for i,v in enumerate(Sweep):
@@ -192,9 +190,9 @@ def DoDeviceSweep(GraphProc,rpg,DataFile,SweepInst,ReadInst,
 		TSocket = MeasurementUtils.SocketRead(TClient, TSocket)
 		MSocket = MeasurementUtils.SocketRead(MClient, MSocket)
 
-		DataVector[:,0] = MSocket[:-1]
-		DataVector[:,1:SocketDataNumber] = TSocket[:-1]
-		DataVector[:,SocketDataNumber] = v
+		DataVector[:,0] = MSocket[0]
+		DataVector[:,1] = TSocket[0]
+		DataVector[:,2] = v
 
 		for j in range(Sample):
 		
@@ -213,7 +211,7 @@ def DoDeviceSweep(GraphProc,rpg,DataFile,SweepInst,ReadInst,
 		
 		if MakePlot or ReturnData:
 			ToPlot = np.empty((NRead+1))
-			ToPlot[0] = DataVector[-1,SocketDataNumber]
+			ToPlot[0] = DataVector[-1,2]
 			for j in range(NRead):
 				ToPlot[j+1] = DataVector[-1,StartColumn[j]+ReadInst[j].DataColumn]
 	
@@ -257,8 +255,8 @@ def DoDeviceSweep(GraphProc,rpg,DataFile,SweepInst,ReadInst,
 		pass
 	
 	# We are finished, now ramp the Keithley to the finish voltage
-#	if MakePlot:
-#		GraphWin.close()
+	if MakePlot:
+		GraphWin.close()
 	MClient.close()
 	TClient.close()
 
@@ -279,7 +277,7 @@ def DoFridgeSweep(GraphProc,rpg,DataFile,
 		Persist = False, # Magnet final state
 		Delay = 0.0, Sample = 1,
 		Timeout = -1, Wait = 0.5, MaxOverTime = 5,
-		ReturnData = False, SocketDataNumber = 5,
+		ReturnData = False,
 		Comment = "No comment!", NetworkDir = "Z:\\DATA",
 		IgnoreMagnet = False):
 
@@ -329,7 +327,7 @@ def DoFridgeSweep(GraphProc,rpg,DataFile,
 	
 	NowTime = datetime.now()
 	Remaining = Timeout*60.0 - float((NowTime-SetTime).seconds)
-	while (TSocket[4] != 1) and (Remaining > 0):
+	while (TSocket[1] != 1) and (Remaining > 0):
 		NowTime = datetime.now()
 		Remaining = Timeout*60.0 - float((NowTime-SetTime).seconds)
 		print "Waiting for temperature ... time remaining = %.2f minutes" % (Remaining/60.0)
@@ -383,7 +381,7 @@ def DoFridgeSweep(GraphProc,rpg,DataFile,
 
 	# This is the main measurement loop
 
-	StartColumn, DataVector = MeasurementUtils.GenerateDataVector(SocketDataNumber,ReadInst,Sample,
+	StartColumn, DataVector = MeasurementUtils.GenerateDataVector(2,ReadInst,Sample,
 							SetValue = SetValue)
 
 	if BSweep:
@@ -430,7 +428,7 @@ def DoFridgeSweep(GraphProc,rpg,DataFile,
 			FridgeStatus = TSocket[-1]
 
 		DataVector[:,0] = MSocket[0]
-		DataVector[:,1:SocketDataNumber] = TSocket[:-1]
+		DataVector[:,1] = TSocket[0]
 
 		for j in range(Sample):
 		
@@ -449,7 +447,7 @@ def DoFridgeSweep(GraphProc,rpg,DataFile,
 		if BSweep:
 			ToPlot[0] = DataVector[-1,0]
 		else:
-			ToPlot[0] = DataVector[-1,2]
+			ToPlot[0] = DataVector[-1,1]
 		for j in range(NRead):
 			ToPlot[j+1] = DataVector[-1,StartColumn[j]+ReadInst[j].DataColumn]
 	
@@ -476,7 +474,7 @@ def DoFridgeSweep(GraphProc,rpg,DataFile,
 		for i,v in enumerate(SetInst):
 			print "Ramping %s to %.2e" % (v.Name, FinishValue[i])
 			v.Ramp(FinishValue[i])
-			
+	
 	if ReturnData:
 		DataList = [None]*(NRead+1)
 		DataList[0] = PlotData[0::NRead+1]
@@ -509,27 +507,12 @@ def DoFridgeSweep(GraphProc,rpg,DataFile,
 	else:
 		return
 
-"""
-	2D data acquisition either by sweeping a device parameter
-	or by sweepng a fridge parameter
- 	The program decides which of these to do depending on if the
-	the variable "SweepInst" is assigned.
-	i.e. if "SweepInst" is assigned the device is swept and the
-	fridge parameter is stepped.
-	If the device is being swept the variable "FridgeRate" is the size
-	of successive steps of either T or B.
-	If the fridge is being swept the first SetInst is stepped by the
-	"DeviceStep"
-	
-	For the case of successive B sweeps the fridge will be swept
-	forwards and backwards
-	e.g.	Vg = -60 V B = -9 --> +9 T
-		Vg = -50 V B = +9 --> -9 T
-		etc ...
-	Note that in this case the first "SetValue" will be overwritten
-	therefore a dummy e.g. 0.0 should be written in the case that there
-	are additional SetInst
-"""
+#########################################################################
+#              SWEEP One of the fridge parameters T or B
+#              For sweeping the fridge the first if the SetInst
+# 	       is stepped the length of SetValue shouls still equal
+#              SetInst but the first value is ignored
+########################################################################
 
 def DeviceFridge2D(GraphProc, rpg, DataFile,
 		ReadInst, SweepInst = [], SetInst=[],
@@ -561,47 +544,41 @@ def DeviceFridge2D(GraphProc, rpg, DataFile,
 
 	if SweepDevice:
 		XVec = np.hstack((np.arange(FridgeStart,FridgeStop,FridgeRate),FridgeStop))
-		YStart = DeviceStart
-		YStop = DeviceStop
-                YStep = DeviceStep
+		YStart = DeviceStart+0.01*(DeviceStop-DeviceStart) 
+		YStop = DeviceStart+0.99*(DeviceStop-DeviceStart)
+		YVec = np.linspace(YStart,YStop,num=2048)
 	else:
 		XVec = np.hstack((np.arange(DeviceStart,DeviceStop,DeviceStep),DeviceStop))
-		YStart = FridgeStart
-		YStop = FridgeStop
-                YStep = FridgeRate
+		YStart = FridgeStart+0.01*(FridgeStop-FridgeStart) 
+		YStop = FridgeStart+0.99*(FridgeStop-FridgeStart)
+		YVec = np.linspace(YStart,YStop,num=2048)
 
-	if not not(XCustom):
+
+	if XCustom:
 		XVec = XCustom
 
-        if SweepDevice:
-                YLen = len(MeasurementUtils.GenerateDeviceSweep(DeviceStart,
-                                    DeviceStop,DeviceStep,Mid=DeviceMid))
-        else:
-                YLen = abs(YStart-YStop)/YStep+1
 
 	NRead = len(ReadInst) 
 	Plt2DWin = [None]*NRead
 	VwBox = [None]*NRead
 	Imv = [None]*NRead
-	ZArray = [np.zeros((len(XVec),YLen)) for i in range(NRead)]
+	ZArray = [np.zeros((len(XVec),len(YVec))) for i in range(NRead)]
 	
-        if SweepDevice:
-        	for i in range(NRead):
-	        	Plt2DWin[i] = rpg.QtGui.QMainWindow()
-		        Plt2DWin[i].resize(500,500)
-        		VwBox[i] = rpg.ViewBox(invertY = True)
-	        	Imv[i] = rpg.ImageView(view=rpg.PlotItem(viewBox=VwBox[i]))
-	        	Plt2DWin[i].setCentralWidget(Imv[i])
-	        	Plt2DWin[i].setWindowTitle("ReadInst %d" % i)
-		        Plt2DWin[i].show()
-		        VwBox[i].setAspectLocked(False)
+	for i in range(NRead):
+		Plt2DWin[i] = rpg.QtGui.QMainWindow()
+		Plt2DWin[i].resize(500,500)
+		VwBox[i] = rpg.ViewBox(invertY = True)
+		Imv[i] = rpg.ImageView(view=rpg.PlotItem(viewBox=VwBox[i]))
+		Plt2DWin[i].setCentralWidget(Imv[i])
+		Plt2DWin[i].setWindowTitle("ReadInst %d" % i)
+		Plt2DWin[i].show()
+		VwBox[i].setAspectLocked(False)
 
+	YScale = (YVec[-1]-YVec[0])/len(YVec)
+	XScale = (XVec[-1]-XVec[0])/len(XVec)
 
-        	YScale = YStep
-        	XScale = (XVec[-2]-XVec[0])/np.float(len(XVec)-1)
-
-	        for j in range(NRead):
-		        Imv[j].setImage(ZArray[j],scale=(XScale,YScale),pos=(XVec[0],YStart))
+	for j in range(NRead):
+		Imv[j].setImage(ZArray[j],scale=(XScale,YScale),pos=(XVec[0],YVec[0]))
 
 	for i,v in enumerate(XVec):
 	
@@ -681,11 +658,12 @@ def DeviceFridge2D(GraphProc, rpg, DataFile,
 							Comment = Comment, NetworkDir = NetworkDir)
 							
 
-#		Ydata = DataList[0]
-                if SweepDevice:
-                    for j in range(NRead):
-        		    ZArray[j][i,:] = DataList[j+1]
-	        	    Imv[j].setImage(ZArray[j],pos=(XVec[0],YStart),scale=(XScale,YScale))
+		Ydata = DataList[0]
+
+		for j in range(NRead):
+			ZItp = interpolate.interp1d(Ydata,DataList[j+1],bounds_error=False,fill_value=0.0)
+			ZArray[j][i,:] = ZItp(YVec)
+			Imv[j].setImage(ZArray[j],scale=(XScale,YScale),pos=(XVec[0],YVec[0]))
 
 	MClient = SocketUtils.SockClient('localhost', 18861)
 	time.sleep(2)
@@ -693,10 +671,10 @@ def DeviceFridge2D(GraphProc, rpg, DataFile,
 	time.sleep(2)
 	MClient.close()
 
-#	for i in range(NRead):
-#		Imv[i].close()
-#		VwBox[i].close()
-#		Plt2DWin[i].close()
+	for i in range(NRead):
+		Imv[i].close()
+		VwBox[i].close()
+		Plt2DWin[i].close()
 	
 	time.sleep(2)
 
@@ -813,10 +791,10 @@ def DeviceDevice2D(GraphProc, rpg, DataFile,
 	time.sleep(2)
 	MClient.close()
 
-#	for i in range(NRead):
-#		Imv[i].close()
-#		VwBox[i].close()
-#		Plt2DWin[i].close()
+	for i in range(NRead):
+		Imv[i].close()
+		VwBox[i].close()
+		Plt2DWin[i].close()
 	
 	time.sleep(2)
 
