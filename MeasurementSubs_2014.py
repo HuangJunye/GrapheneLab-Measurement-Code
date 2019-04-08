@@ -65,7 +65,7 @@ def InitializeSockets():
 	MClient = SocketUtils.SockClient('localhost', 18861)
 	time.sleep(4)
 	MSocket = [0.0, 0]
-	TSocket = [0.0, 0]
+	TSocket = [0.0, 0.0, 0.0, 0.0, 0]
 	TSocket = SocketRead(TClient, TSocket)
 	MSocket = SocketRead(MClient, MSocket)
 	
@@ -79,15 +79,15 @@ def SocketRead(Client,OldSocket = []):
 	if SocketString:
 		SocketString = SocketString.split(",")[-1]
 		SocketString = SocketString.split(" ")
-		if len(SocketString)==2:
+		if len(SocketString)==len(Socket):
 			Value = SocketString[:-1]
 			Status = SocketString[-1]
 			try:
 				for i,v in enumerate(Value):
 					Value[i] = float(v)
 				Status = int(Status)
-				Socket[0] = Value
-				Socket[1] = Status
+				Socket[:-1] = Value
+				Socket[-1] = Status
 			except:
 				pass
 
@@ -99,6 +99,7 @@ def SocketWrite(Client,Msg):
 	time.sleep(2)
 	Client.to_send = "-"
 	asyncore.loop(count=1,timeout=0.001)
+
 
 def OpenCSVFile(FileName,StartTime,ReadInst,
 		SweepInst=[],SetInst=[],Comment = "No comment!\n",
@@ -142,8 +143,9 @@ def OpenCSVFile(FileName,StartTime,ReadInst,
 	# Write the starttime and a description of each of the instruments
 	FileWriter.writerow([StartTime])
 
-	ColumnString = "B (T), T(mK) "
-	
+#	ColumnString = "B (T), T(mK) "
+	ColumnString = "B(T), TVTI (K), TProbe (K), VTI heater, Probe heater "
+
 	for Inst in SweepInst:
 		csvfile.write("".join(("SWEEP: ",Inst.Description())))
 		ColumnString = "".join((ColumnString,", ",Inst.Source))
@@ -164,9 +166,12 @@ def OpenCSVFile(FileName,StartTime,ReadInst,
 
 	print "Writing to data file %s\n" % File
 	return FileWriter, File, NetDir
+
 	
+
 def GenerateDeviceSweep(Start,Stop,Step,Mid = []):
 		#self.Visa.write("".join((":SOUR:",self.Source,":MODE FIX")))
+		
 	Targets = Mid
 	Targets.insert(0,Start)
 	Targets.append(Stop)
@@ -175,7 +180,10 @@ def GenerateDeviceSweep(Start,Stop,Step,Mid = []):
 	for i in range(1,len(Targets)):
 		Points = int(1+abs(Targets[i]-Targets[i-1])/Step)
 		Sweep = np.hstack([Sweep,np.linspace(Targets[i-1],Targets[i],num = Points)[1:Points]])
+	
 	return Sweep
+
+
 
 def GenerateDataVector(LFridgeParam, ReadInst, Sample, SweepInst = False, SetValue = []):
 

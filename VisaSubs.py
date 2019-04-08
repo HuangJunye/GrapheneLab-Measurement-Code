@@ -13,7 +13,7 @@ Edited to support PyVisa 1.6
 
 Functions written:
 	InitializeGPIB
-	InitialIzeSerial
+	InitializeSerial
 
 """
 import visa as visa
@@ -24,12 +24,12 @@ def InitializeGPIB(address, board, QueryID=True, ReadTermination = "LF"
                     , **kwargs):
 	rm = visa.ResourceManager()
         GPIBName = "GPIB%d::%d::INSTR" % (board,address)
-#        print GPIBName
+       # print GPIBName
         try:
 		GPIBVisa = rm.open_resource(GPIBName)
                 if ReadTermination == "LF":
-                    GPIBVisa.read_termination = "\n"
-                    GPIBVisa.write_termination = "\n"                    
+                   GPIBVisa.read_termination = "\n"
+                   GPIBVisa.write_termination = "\n"                    
                 elif ReadTermination == "CR":
                     GPIBVisa.read_termination = "\r"
                     GPIBVisa.write_termination = "\r"
@@ -40,7 +40,7 @@ def InitializeGPIB(address, board, QueryID=True, ReadTermination = "LF"
 		        tmp = "".join(("GPIBVisa.",kw,"=",kwargs[kw]))
 			exec(tmp)
 		if QueryID:
-			print GPIBVisa.ask("*IDN?")
+			print GPIBVisa.query("*IDN?")
 	except Exception:
 		print "Failed opening GPIB address %d\n" % address
 		GPIBVisa = None
@@ -62,7 +62,7 @@ def InitializeSerial(name,idn="*IDN?",ReadTermination="LF", **kwargs):
 		for kw in kwargs.keys():
 			tmp = "".join(("SerialVisa.",kw,"=",kwargs[kw]))
 			exec(tmp)
-		print SerialVisa.ask(idn)
+		print SerialVisa.query(idn)
 	except Exception:
 		print "Failed opening serial port %s\n" % name
 		SerialVisa = None

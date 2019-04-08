@@ -104,9 +104,6 @@ class TControl():
 		# P=10 I=1 (March 2014) : doesn't set correctly
 		# P=5  I=10 (from earlier file): don't know about performance
 		
-		# Testing 2018.08.07
-		#self.pid = PIDControl.PID(P=100.,I=.5,D=0,Derivator=0,Integrator=0,Integrator_max=60000,Integrator_min=-2000)
-		
 		# For poor base T (>200mK)
 		self.pid = PIDControl.PID(P=20.,I=.5,D=0,Derivator=0,Integrator=0,Integrator_max=60000,Integrator_min=-2000)
 
@@ -115,7 +112,7 @@ class TControl():
 		
 		# For high heater power
 		#self.pid = PIDControl.PID(P=10000.,I=10.,D=0,Derivator=0,Integrator=0,Integrator_max=40000,Integrator_min=-2000)
-		#self.PIDOut = 0
+		self.PIDOut = 0
 
 		return
 
@@ -188,7 +185,7 @@ class TControl():
 		self.TempHistory.pop()
 		self.TempHistory.appendleft(self.Temperature)
 		return
-		
+
 	# Update the parameter AtSet for the probe
 	def UpdateAtSet(self):
 		Set = False
@@ -351,13 +348,8 @@ if __name__ == '__main__':
 	# Initialize a PID controller
 
 	control = TControl()
-	
-	control.SetPicoChannel(3) #ch3 for SO703
+	control.SetPicoChannel(3)
 	control.Sensor = "SO703"
-	#control.SetPicoChannel(4) #ch4 for MATS56
-	#control.Sensor = "MATS56"
-	#control.SetPicoChannel(5) #ch5 for CERNOX. Do not use below 1K
-	#control.Sensor = "CERNOX"
 
 	# Main loop
 	control.ReadTCS()

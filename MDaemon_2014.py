@@ -357,7 +357,7 @@ class MControl():
                         print "Got new set point from socket %.2f T" % self.TargetField
             except:
                 pass
-
+              
         if Msg[0] == "SWP":
             # Message has form "SWP TargetField Rate TargetHeater"
             #print Msg

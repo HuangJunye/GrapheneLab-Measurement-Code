@@ -20,6 +20,10 @@ last edited :  Feb 2014
     The definition of ready is that the magnet daemon has completed the most recent task from the socket and can accept new tasks.
 
     The daemon always processes the most recent task from the socket, i.e., a new task overwrites previous tasks.
+
+Changes in v1
+1. Higher magnetic field resolution (0.3 mT) at small field (<1 T).
+	
 """
 
 import SocketUtils as SocketUtils
@@ -50,7 +54,7 @@ class MControl():
     def __init__(self):
         # Connect visa to the magnet
         self.Visa = VisaSubs.InitializeSerial("ASRL11::INSTR")
-		# Add Timeout to 200s
+		    # Add Timeout to 200s
         self.Visa.timeout=200000
         # Open the socket
         address = ('localhost',18861)
