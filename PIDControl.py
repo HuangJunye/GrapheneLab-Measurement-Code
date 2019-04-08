@@ -58,13 +58,16 @@ class PID:
 
 		return PID
 
-	def setPoint(self,set_point):
+	def setPoint(self,set_point,reset=True):
 		"""
 		Initilize the setpoint of PID
 		"""
 		self.set_point = set_point
-		self.Integrator=0
-		self.Derivator=0
+		if reset:
+			self.Integrator=0
+			self.Derivator=0
+		else:
+			pass
 
 	def setIntegrator(self, Integrator):
 		self.Integrator = Integrator
