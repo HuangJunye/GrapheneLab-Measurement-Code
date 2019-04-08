@@ -24,7 +24,6 @@ Classes for:
 import rpyc
 import visa as visa
 import VisaSubs as VisaSubs
-
 import string as string
 import re as re
 from collections import namedtuple
@@ -54,6 +53,7 @@ class k6430:
 		self.Source = "VOLT"
 		self.Output = False
 		self.Visa.write(":OUTP 0")
+		#self.Visa.write(":SOURce1:CLEar:AUTO ON")
 		self.Data = [0.0 ,0.0]
 		self.Sense = []
 		self.RampStep = 0.1
@@ -69,7 +69,7 @@ class k6430:
 	def InitializeVoltage(self,Compliance = 105e-9,
 				Median = 0,Repetition =1, Moving= 1,
 				Integration=1,Delay=0.0,Trigger=0,
-				RampStep = 0.1,Range=105e-9,AutoRange = False, AutoFilter = False, AutoDelay = False, SourceRange=0.2):
+				RampStep = 0.1,Range=105e-9,AutoRange = False, AutoFilter = False, AutoDelay = False, SourceRange=100):
 
 		self.ColumnNames = "V (V), I (A)"
 		self.DataColumn = 1
@@ -78,7 +78,6 @@ class k6430:
 		self.Sense = "CURR"
 		self.Moving = Moving
 		self.SourceRange= SourceRange
-
 		# Special variables for 6430
 		self.Median = Median
 		self.Repetition = Repetition
@@ -210,7 +209,11 @@ class k6430:
 	################################################
 
 	def ReadData(self):
-		Reply = self.Visa.ask(":READ?")
+		if self.Output == 0: #for some reason :READ? command gives an error if output is equal to 0
+			Reply = self.Visa.ask(":FETCh?")
+		else:
+			Reply = self.Visa.ask(":READ?")
+		pass
 		self.Data = [float(i) for i in Reply.split(",")[0:2]]
 		pass
 	
@@ -296,7 +299,6 @@ class k6430:
 			self.ReadData()
 		return
 
-
 class k2400:
 	def __init__(self,address):
 		self.Name = "Keithley 2400"
@@ -317,16 +319,15 @@ class k2400:
 	# Initializate as voltage source
 	#######################################
 
-	def InitializeVoltage(self,Compliance = 105e-9,RampStep = 0.1,AutoRange = False, SourceRange=100., Range=1.0e-6):
+	def InitializeVoltage(self, Range= 105e-9, Compliance = 105e-9, RampStep = 0.1,AutoRange = False, SourceRange=100.):
 
 		self.Compliance = Compliance
 		self.RampStep = RampStep
-		self.Range=Range
-
 		self.ColumnNames = "V (V), I (A)"
 		self.DataColumn = 1
 		self.Source = "VOLT"
 		self.Sense = "CURR"
+		self.Range = Range
 		# A bunch of commands to configure the 6430
 		self.Visa.write("*RST")
 		time.sleep(.1)
@@ -347,8 +348,7 @@ class k2400:
 		if AutoRange:
 			self.Visa.write(":SENS:CURR:RANG:AUTO 0")
 		else:
-			self.Visa.write(":SENS:CURR:RANG %.3e" % Range)
-
+			self.Visa.write(":SENS:CURR:RANG %.3e" % self.Range)
 	
 		self.Visa.write(":SENS:CURR:PROT:LEV %.3e" % self.Compliance)
 		
@@ -821,7 +821,6 @@ class k6221k2182a:
 				self.SwitchOutput()
 		return
 
-
 class k2182a:
 	def __init__(self,address):
 		self.Name = "Keithley 2182A"
@@ -936,4 +935,106 @@ class k2182a:
 		DescriptionString = "".join((DescriptionString,"\n"))
 		return DescriptionString
 
+class gaussmeter:
+	def __init__(self,address):
+		self.Name = "Lakeshore 475 DSP"
+		self.Address = address
+		self.Visa = VisaSubs.InitializeGPIB(address,0,term_chars = "\\n")
+		# Other 6430 properties
+		self.Output = False
+		self.Source = "Field"
+		self.Data = [0.0]
+		self.Sense = []
+		self.ColumnNames = "(Gauss)"
+		self.DataColumn = 0
+		self.SourceColumn = 1
 
+	######################################
+	# Initializate as voltage source
+	#######################################
+
+	def InitializeGauss(self):
+		self.Visa.write("UNIT 1")
+		self.Visa.write("CMODE 1")
+		self.Visa.write("CPARAM 15.0, 5.0, 3000.0, 40.0 ")
+		pass
+
+		
+	###########################################
+	# Set the range and compliance
+	#######################################
+	
+	def SetRangeCompliance(self, Range = 105, Compliance = 105):
+		
+		pass
+
+	##################################################
+	# Read data
+	################################################
+
+	def ReadData(self):
+		Reply = self.Visa.ask(":RDGFIELD?")
+		self.Data = [Reply]
+		pass
+	
+	##################################################
+	# Set source
+	##################################################
+
+	def SetOutput(self,Level):
+		self.Visa.write("CSETP %.4e" % Level)
+		time.sleep(4.0)
+		pass
+
+	#################################################
+	# Switch the output
+	###############################################
+
+	def SwitchOutput(self):
+		self.Output = not self.Output		
+		pass
+	
+	#################################################
+	# Configure a sweep
+	###############################################
+
+	def ConfigureSweep(self,Start,Stop,Step,Soak = 0):
+
+		pass
+
+	###################################################
+	# Begin sweep, this doesn't work so well, not recommended
+	#################################################
+
+	def RunConfiguredSweep(self):
+		pass
+
+
+	###################################################
+	# Print a description string 
+	################################################
+	
+	def Description(self):
+		DescriptionString = "Lake Shore Gaussmeter"
+		for item in vars(self).items():
+			if item[0] == "Address":
+				DescriptionString = ", ".join((DescriptionString,"%s = %.3f" % item))
+			elif item[0] == "Source" or item[0] == "Sense" or item[0] == "Compliance":
+				DescriptionString = ", ".join((DescriptionString,"%s = %s" % item))
+
+
+		DescriptionString = "".join((DescriptionString,"\n"))
+		return DescriptionString
+
+	############################################
+	######### Ramp the source to a final value
+	#########################################
+	
+	def Ramp(self,VFinish):
+		time1=float(self.Visa.ask(":RDGFIELD?"))
+		time2=4*abs(VFinish-time1)/50
+		self.Visa.write("CSETP %.4e" % VFinish)
+		print "Ramping to Field Value"
+		time.sleep(time2)
+		
+		return

@@ -119,7 +119,7 @@ class SrsLia:
 	# parameters
 	##################################################
 
-	def Initialize(self,autorange=False):
+	def Initialize(self,autorange=False, offset=False):
 		self.Excitation = self.ReadNumeric("SLVL")
 		self.Frequency = self.ReadNumeric("FREQ")
 		self.Harmonic = self.ReadNumeric("HARM")
@@ -129,7 +129,10 @@ class SrsLia:
 		self.InternalExcitation = self.ReadNumeric("FMOD")
 		self.Expand = np.empty(2)
 		self.Offset = np.empty(2)
-		self.ReadOffset()
+		if offset:
+			self.ReadOffset(auto=1)
+		else:
+			self.ReadOffset()
 		self.AutoRange = autorange
 		self.ColumnNames = "X (V), Y (V), R (V), Phase (Deg)"
 		self.CalcSensMax()

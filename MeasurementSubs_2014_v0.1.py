@@ -64,8 +64,8 @@ def InitializeSockets():
 	TClient = SocketUtils.SockClient('localhost', 18871)
 	MClient = SocketUtils.SockClient('localhost', 18861)
 	time.sleep(4)
-	MSocket = [0.0, 0]
-	TSocket = [0.0, 0.0, 0.0, 0.0, 0]
+	MSocket = [[0.0], 0]
+	TSocket = [[0.0,0.0,0.0,0.0], 0]
 	TSocket = SocketRead(TClient, TSocket)
 	MSocket = SocketRead(MClient, MSocket)
 	
@@ -80,15 +80,16 @@ def SocketRead(Client,OldSocket = []):
 		#print SocketString
 		SocketString = SocketString.split(",")[-1]
 		SocketString = SocketString.split(" ")
-		if len(SocketString)==len(Socket):
-			Value = SocketString[:-1]
-			Status = SocketString[-1]
+		#if len(SocketString)==2:
+		Value = SocketString[:-1]
+		Status = SocketString[-1]
+		if len(Value) == len(OldSocket[0]):
 			try:
 				for i,v in enumerate(Value):
 					Value[i] = float(v)
 				Status = int(Status)
-				Socket[:-1] = Value
-				Socket[-1] = Status
+				Socket[0] = Value
+				Socket[1] = Status
 			except:
 				pass
 
@@ -101,9 +102,7 @@ def SocketWrite(Client,Msg):
 	Client.to_send = "-"
 	asyncore.loop(count=1,timeout=0.001)
 
-def OpenCSVFile(FileName,StartTime,ReadInst,
-		SweepInst=[],SetInst=[],Comment = "No comment!\n",
-		NetworkDir = "Z:\\DATA"):
+def OpenCSVFile(FileName,StartTime,ReadInst,SweepInst=[],SetInst=[],Comment = "No comment!\n"):
 	
 	# Setup the directories
 	# Try to make a directory called Data in the CWD
@@ -143,8 +142,8 @@ def OpenCSVFile(FileName,StartTime,ReadInst,
 	# Write the starttime and a description of each of the instruments
 	FileWriter.writerow([StartTime])
 
-	ColumnString = "B(T), TVTI (K), TProbe (K), VTI heater, Probe heater "
-
+	ColumnString = "B (T), T-VTI (K), T Sample (K), Heater VTI (%), Heater Sample (%), "
+	
 	for Inst in SweepInst:
 		csvfile.write("".join(("SWEEP: ",Inst.Description())))
 		ColumnString = "".join((ColumnString,", ",Inst.Source))
@@ -166,8 +165,6 @@ def OpenCSVFile(FileName,StartTime,ReadInst,
 	print "Writing to data file %s\n" % File
 	return FileWriter, File, NetDir
 
-	
-
 def GenerateDeviceSweep(Start,Stop,Step,Mid = []):
 		#self.Visa.write("".join((":SOUR:",self.Source,":MODE FIX")))
 		
@@ -181,8 +178,6 @@ def GenerateDeviceSweep(Start,Stop,Step,Mid = []):
 		Sweep = np.hstack([Sweep,np.linspace(Targets[i-1],Targets[i],num = Points)[1:Points]])
 	
 	return Sweep
-
-
 
 def GenerateDataVector(LFridgeParam, ReadInst, Sample, SweepInst = False, SetValue = []):
 

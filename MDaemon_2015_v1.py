@@ -23,7 +23,6 @@ last edited :  Feb 2014
 
 Changes in v1
 1. Higher magnetic field resolution (0.3 mT) at small field (<1 T).
-	
 """
 
 import SocketUtils as SocketUtils

@@ -35,7 +35,6 @@ import numpy as np
 import asyncore
 import PIDControl
 from datetime import datetime
-from collections import deque
 
 class TControl():
 
@@ -43,13 +42,11 @@ class TControl():
 	# Server, server always runs at 18871
 	def __init__(self):
 
-		self.PicoVisa = VisaSubs.InitializeGPIB(20,0,
-                                    query_delay="0.04")
+		self.PicoVisa = visa.instrument("GPIB0::20::INSTR",delay=0.04)
 		self.PicoVisa.write("HDR0")
 		self.PicoVisa.write("ARN 1")
 		self.PicoVisa.write("REM 1")
-                self.TCSVisa = VisaSubs.InitializeSerial("ASRL6::INSTR",
-                        idn="ID?")
+		self.TCSVisa = VisaSubs.InitializeSerial("ASRL5",idn="ID?",term_chars="\\n")
 		address = ('localhost',18871)
 		self.Server = SocketUtils.SockServer(address)
 
@@ -67,11 +64,11 @@ class TControl():
 		self.TCSCurrent = [0,0,0]
 		
 		self.MaxSetTemp = 10000.0
-		self.MaxCurrent = 35000
+		self.MaxCurrent = 25000
 
 		# Acceptable temperature error as a factor e.g. 100 * 0.005 = 0.5mK
-		self.ErrorTemp = 0.01 # The acceptable error in temperature
-		self.ErrorDeltaTemp = 0.005 # The acceptable stability
+		self.ErrorTemp = 0.005 # The acceptable error in temperature
+		self.ErrorDeltaTemp = 0.001 # The acceptable stability
 
 		# Sweep description
 		self.SweepFinish = 0.0
@@ -88,7 +85,6 @@ class TControl():
 		self.AtSet = False
 		self.SweepMode = False
 		self.StatusMsg = 0 # not ready
-		self.TempHistory = deque(np.zeros((60,)))
 
 		# Status events
 		self.StatusInterval = 1.0
@@ -127,6 +123,8 @@ class TControl():
 		Source = Source + 1
 		command = " ".join(("SETDAC","%d" % Source,"0","%d" % Current))
 		
+		NEWPID = pid.update(control.Temperature)
+		NEWPID = int(NEWPID)
 		self.TCSVisa.ask(command)
 		return
 
@@ -156,7 +154,6 @@ class TControl():
 		time.sleep(3)
 		self.PicoVisa.write("INP 1")
 		time.sleep(10)
-		self.PicoChannel = Channel
 		return
 
 	def ReadTCS(self):
@@ -181,9 +178,6 @@ class TControl():
 			RPoly[i] = logR * RPoly[i-1]
 		self.Temperature = np.power(10,(np.sum(np.multiply(RPoly,Calibration))))
 		self.DeltaTemp = self.Temperature - OldT
-
-		self.TempHistory.pop()
-		self.TempHistory.appendleft(self.Temperature)
 		return
 
 	# Update the parameter AtSet for the probe
@@ -193,7 +187,7 @@ class TControl():
 		Stable = False
 		# 1 = Sweep
 		ErrorFactor = abs(self.Temperature - self.SetTemp)/self.Temperature
-		DeltaTempFactor = abs(np.std(self.TempHistory))/self.Temperature
+		DeltaTempFactor = abs(self.DeltaTemp)/self.Temperature
 		if ErrorFactor < self.ErrorTemp:
 			Set = True
 		if DeltaTempFactor < self.ErrorDeltaTemp:
@@ -213,17 +207,10 @@ class TControl():
 				# Only interpret new setpoints if the change is >50mK
 				if abs(self.SetTemp-NewSet) > 0.05:
 					self.SetTemp = NewSet
-					if self.PicoChannel == 5:
-						pass
-					#elif self.SetTemp > 800:
-					#	self.pid.setKp(20.)
-					#else:
-					#	self.pid.setKp(10.)
-					self.pid.setPoint(self.SetTemp)
 					# Set at set to be false and write the new set point
 					self.AtSet = False
 					self.SweepMode = False
-					print "Got probe set point from socket %.2f\n" % self.SetTemp
+					print "Got probe set point from socket %.2f\n" % self.SetTemp[1]
 			except:
 				pass
 
@@ -232,7 +219,6 @@ class TControl():
 				self.SweepFinish = float(Msg[1])
 				if abs(self.SweepFinish - self.SetTemp) > 0.05:
 					self.SweepStart = self.SetTemp
-					self.pid.setPoint(self.SetTemp)
 					self.SweepRate = abs(float(Msg[2]))
 					self.SweepRateSec = self.SweepRate/60.0
 					self.SweepMaxOverTime = abs(float(Msg[3]))
@@ -286,16 +272,7 @@ class TControl():
 		if SweepFinished:
 			self.SweepMode = False
 		else:
-			OldSet = self.SetTemp
 			self.SetTemp = self.SweepStart + self.SweepRateSec * dT.seconds * self.SweepDirection
-			
-			if self.PicoChannel == 5:
-				pass
-			#elif (OldSet < 800.) and (self.SetTemp > 800.):
-			#	self.pid.setKp(20.)
-			#elif (OldSet > 800.) and (self.SetTemp < 800.):
-			#	self.pid.setKp(10.)
-			self.pid.setPoint(self.SetTemp,reset=False)
 
 		return
 
@@ -316,8 +293,7 @@ class TControl():
 
 	def PrintStatus(self):
 		StatusString = "%s = %.2f mK; PID output = %d; " % (self.Sensor,self.Temperature,self.PIDOut)
-		StatusString += "Status message = %d; " % self.StatusMsg
-		StatusString += "P = %.2f, I = %.2f, D = %.2f\n" % (self.pid.P_value,self.pid.I_value,self.pid.D_value)	
+		StatusString += "Status message = %d\n" % self.StatusMsg
 		print StatusString
 		self.LastStatusTime = datetime.now()
 		return
@@ -325,36 +301,33 @@ class TControl():
 	def TCSSwitchHeater(self,Heater):
 		CommandVec = np.zeros((12,))
 		CommandVec[2+Heater*4] = 1
-		CommandStr = "SETUP "
-		print "Heater %d Switched %d" % (Heater,int(not self.TCSHeater[Heater]))
+		CommandStr = ""
+		print "Heater %d Switched" % Heater
 		for i in CommandVec:
 			CommandStr = "".join((CommandStr, "%d," % i))
 		CommandStr = CommandStr[:-1]
-		reply = self.TCSVisa.ask(CommandStr)
+		self.TCSVisa.ask(" ".join(("SETUP",CommandStr)))
 		return
 
 
 ##################### Calibrations
-Calibrations={"SO703":[7318.782092,-13274.53584,10276.68481,
-	-4398.202411,1123.561007,-171.3095557,14.43456504,-0.518534965],
-		"SO914":[5795.148097375,-11068.032226486,9072.821104899,
-			-4133.466851312,1129.955799406,-185.318021359,16.881907269,-0.658939155],
-		"MATS56":[19.68045382,-20.19660902,10.13318296,-2.742724207,0.385556989,-0.022178276],
-		"CERNOX":[4.62153,-1.17709,-0.222229,-2.3114e-11]}
-
+Calibrations={"SO703":[7318.782092,-13274.53584,10276.68481,-4398.202411,1123.561007,-171.3095557,14.43456504,-0.518534965],
+		"SO914":[5795.148097375,-11068.032226486,9072.821104899,-4133.466851312,1129.955799406,-185.318021359,16.881907269,-0.658939155],
+		"MATS56":[19.68045382,-20.19660902,10.13318296,-2.742724207,0.385556989,-0.022178276]}
 
 if __name__ == '__main__':
 
 	# Initialize a PID controller
 
+	pid = PIDControl.PID(P=10,I=1,D=0,Derivator=0,Integrator=0,Integrator_max=15000,Integrator_min=-2000)
+
 	control = TControl()
 	control.SetPicoChannel(3)
 	control.Sensor = "SO703"
 
+
 	# Main loop
 	control.ReadTCS()
-
-	#print control.pid.Ki
 
 	while 1:
 		
@@ -370,19 +343,20 @@ if __name__ == '__main__':
 			SocketMsg = j.received_data
 			if SocketMsg:
 				control.ReadMsg(SocketMsg)
+				pid.setPoint(control.SetTemp)
 		asyncore.loop(count=1,timeout=0.001)
 		
 		# if we are sweeping we do some things specific to the sweep
 		if control.SweepMode:
 			control.SweepControl()
-			#control.pid.setPoint(control.SetTemp)
+			pid.setPoint(control.SetTemp)
 
 		# check if we should send an update
 		UpdateTime = datetime.now() - control.LastStatusTime
 		if UpdateTime.seconds/60.0 >= control.StatusInterval:
 			control.PrintStatus()
 	
-		NEWPID = control.pid.update(control.Temperature)
+		NEWPID = pid.update(control.Temperature)
 		try:
 			control.PIDOut = int(NEWPID)
 		except:
@@ -396,19 +370,17 @@ if __name__ == '__main__':
 
 		if control.PIDOut > 0 and control.TCSHeater[2] == 0:
 			# status is go to set and heater is off --> turn it on
-			control.SetTCS(2,control.PIDOut)
 			control.TCSSwitchHeater(2)
 			control.ReadTCS()
 		elif control.PIDOut <= 0 and control.TCSHeater[2] == 1:
 			# status is go to set and heater is off --> turn it on
 			control.TCSSwitchHeater(2)
-			control.SetTCS(2,0)			
 			control.ReadTCS()
 		elif control.PIDOut >= 0 and control.TCSHeater[2] == 1:
 			control.SetTCS(2,control.PIDOut)
 			control.TCSCurrent[2] = control.PIDOut
 
-		time.sleep(0.5)
+		time.sleep(0.4)
 
 	control.TCSVisa.close()
 
