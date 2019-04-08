@@ -59,7 +59,7 @@ class SockServer(asyncore.dispatcher):
 
 class SockHandler(asyncore.dispatcher):
 
-	def __init__(self, sock, server, chunk_size = 256):
+	def __init__(self, sock, server, chunk_size = 1024):
 		self.chunk_size = chunk_size
 		#self.logger = logging.getLogger('EchoHandler%s' % str(sock.getsockname()))
 		asyncore.dispatcher.__init__(self, sock=sock)
@@ -95,7 +95,7 @@ class SockHandler(asyncore.dispatcher):
 
 class SockClient(asyncore.dispatcher):
 
-	def __init__(self, host, port, chunk_size=256):
+	def __init__(self, host, port, chunk_size=1024):
 		#self.message = message
 		self.to_send = ""
 		self.received_data = ""

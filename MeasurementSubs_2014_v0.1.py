@@ -102,7 +102,6 @@ def SocketWrite(Client,Msg):
 	Client.to_send = "-"
 	asyncore.loop(count=1,timeout=0.001)
 
-
 def OpenCSVFile(FileName,StartTime,ReadInst,SweepInst=[],SetInst=[],Comment = "No comment!\n"):
 	
 	# Setup the directories
@@ -166,8 +165,6 @@ def OpenCSVFile(FileName,StartTime,ReadInst,SweepInst=[],SetInst=[],Comment = "N
 	print "Writing to data file %s\n" % File
 	return FileWriter, File, NetDir
 
-	
-
 def GenerateDeviceSweep(Start,Stop,Step,Mid = []):
 		#self.Visa.write("".join((":SOUR:",self.Source,":MODE FIX")))
 		
@@ -181,8 +178,6 @@ def GenerateDeviceSweep(Start,Stop,Step,Mid = []):
 		Sweep = np.hstack([Sweep,np.linspace(Targets[i-1],Targets[i],num = Points)[1:Points]])
 	
 	return Sweep
-
-
 
 def GenerateDataVector(LFridgeParam, ReadInst, Sample, SweepInst = False, SetValue = []):
 

@@ -134,7 +134,7 @@ class k6430:
 	def InitializeCurrent(self,Compliance = 1.0,
 				Median = 0,Repetition =1,
 				Integration=1,Delay=0.0,Trigger=0,
-				RampStep = 0.1,Range=1.0,AutoRange = False):
+				RampStep = 0.1,Range=1.0,AutoRange = False, NPLC=1.0):
 
 		self.ColumnNames = "V (V), I (A)"
 		self.DataColumn = 0
@@ -149,6 +149,7 @@ class k6430:
 		self.Compliance = Compliance
 		self.RampStep = RampStep
 		self.Range = Range
+		self.Visa.write(":SENS:VOLT:NPLC %.6e" % NPLC)
 
 		# A bunch of commands to configure the 6430
 		self.Visa.write("*RST")
@@ -385,7 +386,6 @@ class k2400:
 	###############################################
 
 	def SwitchOutput(self):
-		self.Output = not self.Output		
 		self.Visa.write("".join((":OUTP:STAT ","%d" % self.Output)))
 		pass
 
@@ -429,6 +429,121 @@ class k2400:
 		
 		return
 
+		######################################
+	# Initializate as for Ohms measurement 4-point
+	#######################################
+
+	def InitializeOhms(self,Compliance = 0.2,RampStep = 1.0e-8,AutoRange = False, ZeroComp = False, SourceRange=100., NPLC=1.0):
+
+		self.Compliance = Compliance
+		self.RampStep = RampStep
+		self.ZeroComp = ZeroComp
+		self.NPLC = NPLC
+		self.ColumnNames = "V (V), I (A), R(Ohm)"
+		self.DataColumn = 2
+		self.Data = [0.0, 0.0, 0.0]
+		# A bunch of commands to configure the 6430
+		self.Visa.write("*RST")
+		time.sleep(.1)
+		self.Output = False
+		self.Visa.write(""":SENS:FUNC "RES" """)
+		self.Visa.write(""":SENS:FUNC "CURR" """)
+		self.Visa.write(":SENS:RES:NPLC %.6e" %NPLC)
+		
+		# Configure the zero compensation
+		if ZeroComp == True:
+			self.Visa.write(":SENS:RES:OCOM ON")
+		else:
+			self.Visa.write(":SENS:RES:OCOM OFF")
+		
+		# Configure manual ohms (no auto-sourcing)
+		self.Visa.write(":SENS:RES:MODE MAN")
+		self.Visa.write(":SOUR:FUNC CURR")
+		self.Visa.write("FORM:ELEM VOLT, CURR, RES")
+		# Configure 4-point sensing
+		self.Visa.write(":SYST:RSEN ON")
+		
+		self.Visa.write("SENS:VOLT:PROT %.6e" %Compliance)
+		
+		#self.Visa.write(":SOUR:VOLT:RANG %.1f" % SourceRange)
+
+		#if AutoRange:
+		#	self.Visa.write(":SENS:RES:RANG:AUTO 0")
+		#else:
+		#	self.Visa.write(":SENS:RES:RANG 10E3")
+		#
+		#self.Visa.write(":SENS:VOLT:PROT:LEV %.3e" % self.Compliance)
+		
+		return
+
+
+	##################################################
+	# Read data
+	################################################
+
+	def ReadData(self):
+		Reply = self.Visa.ask(":READ?")
+		#self.Data = [float(i) for i in Reply.split(",")[0:2]]
+		self.Data = [float(i) for i in Reply.split(",")]
+		pass
+	
+
+	##################################################
+	# Set source
+	##################################################
+
+	#def SetOutput(self,Level):
+	#	self.Visa.write(":SOUR:CURR %.4e" % Level)
+	#	pass
+
+	#################################################
+	# Switch the output
+	###############################################
+
+	def SwitchOutput(self):
+		self.Output = not self.Output		
+		self.Visa.write("".join((":OUTP:STAT ","%d" % self.Output)))
+		pass
+
+
+	###################################################
+	# Print a description string 
+	################################################
+	
+	def Description(self):
+		DescriptionString = "Keithley2400"
+		for item in vars(self).items():
+			if item[0] == "Address":
+				DescriptionString = ", ".join((DescriptionString,"%s = %.3f" % item))
+			elif item[0] == "Source" or item[0] == "Sense" or item[0] == "Compliance":
+				DescriptionString = ", ".join((DescriptionString,"%s = %s" % item))
+
+
+		DescriptionString = "".join((DescriptionString,"\n"))
+		return DescriptionString
+
+	############################################
+	######### Ramp the source to a final value
+	#########################################
+	
+	def Ramp(self,VFinish):
+		if self.Output:
+			self.ReadData()
+		VStart = self.Data[1]
+		if abs(VStart-VFinish) > self.RampStep:
+			N = abs((VFinish-VStart)/self.RampStep)
+			VSweep = np.linspace(VStart,VFinish,num=np.ceil(N),endpoint=True)
+
+			if not self.Output:
+				self.SwitchOutput()
+
+			for i in range(len(VSweep)):
+				self.SetOutput(VSweep[i])
+				time.sleep(0.01)
+
+			self.ReadData()
+		
+		return
 
 class k6221:
 	# The 6221 operates only as a source, these functions configure it as an AC source (WAVE mode)
@@ -698,3 +813,119 @@ class k6221k2182a:
 				self.SetOutput(VFinish)
 				self.SwitchOutput()
 		return
+
+class k2182a:
+	def __init__(self,address):
+		self.Name = "Keithley 2182A"
+		self.Address = address
+		self.Visa = VisaSubs.InitializeGPIB(address,0,term_chars = "\\n")
+
+	######################################
+	# Initializate as voltage
+	#######################################
+
+	def InitializeVoltage(self,Channel=1,ACal=False,
+				Relative=False,AFilt=False,
+				DFilt=True,Count=5,
+				Range=1.,
+				AutoRange = False):
+
+		self.ColumnNames = "V (V)"
+		self.Data = [0.0]
+		self.DataColumn = 0
+		self.Sense = "VOLT"
+		# Special variables for 2182
+		self.Channel = Channel
+		self.Relative = Relative
+		self.AFilt = AFilt
+		self.DFilt = DFilt
+		self.Count = Count
+		self.Range = Range
+		self.AutoRange = AutoRange
+
+		# A bunch of commands to configure the 2182
+		self.Visa.write("*RST")
+		time.sleep(.1)
+		self.Visa.write(":SENS:FUNC \'VOLT\'")
+		self.Visa.write(":SENS:CHAN %d" % Channel)
+
+		if ACal:
+			self.Visa.write(":CAL:UNPR:ACAL:INIT")
+			time.sleep(1.0)
+			Reply = self.Visa.ask(":CAL:UNPR:ACAL:TEMP?")
+			time.sleep(10.)
+				#Reply = 1
+				#Reply = self.Visa.ask("*OPC?")
+			self.Visa.write(":CAL:UNPR:ACAL:DONE")
+
+		self.Visa.ask(":READ?")
+		# Disable concurrent mode, measure I and V (not R)
+		self.SetRange(Range=Range,AutoRange=AutoRange)
+
+		# Set some filters
+		if AFilt:
+			self.Visa.write(":SENS:VOLT:LPAS 1")
+		else:
+			self.Visa.write(":SENS:VOLT:LPAS 0")
+
+
+		if DFilt:
+			self.Visa.write(":SENS:VOLT:DFIL 1")
+			self.Visa.write(":SENS:VOLT:DFIL:COUN %d" % Count)
+		else:
+			self.Visa.write(":SENS:VOLT:DFIL 0")
+
+		self.Visa.ask(":READ?")
+
+		self.Visa.write(":SENS:VOLT:REF:STAT 0")
+		if Relative:
+			self.Visa.write(":SENS:VOLT:REF:ACQ")
+			self.Visa.write(":SENS:VOLT:REF:STAT 1")
+			Reply = self.Visa.ask(":SENS:VOLT:REF?")
+			print Reply
+			self.RelativeValue = float(Reply)
+		
+		pass
+
+
+	###########################################
+	# Set the range
+	#######################################
+	
+	def SetRange(self, Range = 0.1, AutoRange = False):
+
+		if AutoRange:
+			self.AutoRange = True
+			self.Visa.write("".join((":SENS:",self.Sense,":RANG:AUTO 1")))
+		else:
+			self.Range = Range
+			self.AutoRange = False
+			self.Visa.write("".join((":SENS:",self.Sense,":RANG ","%.2e" % Range)))
+		
+		pass
+
+	##################################################
+	# Read data
+	################################################
+
+	def ReadData(self):
+		Reply = self.Visa.ask(":READ?")
+		self.Data = [float(Reply)]
+		pass
+	
+	###############################################
+	# Print a description string 
+	################################################
+	
+	def Description(self):
+		DescriptionString = "Keithley2182"
+		for item in vars(self).items():
+			if item[0] == "Address":
+				DescriptionString = ", ".join((DescriptionString,"%s = %.3f" % item))
+			elif item[0] == "Sense" or item[0] == "Range" or item[0] == "Relative" or item[0] == "RelativeValue":
+				DescriptionString = ", ".join((DescriptionString,"%s = %s" % item))
+
+		DescriptionString = "".join((DescriptionString,"\n"))
+		return DescriptionString
+
+

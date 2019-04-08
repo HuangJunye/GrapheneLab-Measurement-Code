@@ -385,7 +385,6 @@ class k2400:
 	###############################################
 
 	def SwitchOutput(self):
-		self.Output = not self.Output		
 		self.Visa.write("".join((":OUTP:STAT ","%d" % self.Output)))
 		pass
 
@@ -429,6 +428,118 @@ class k2400:
 		
 		return
 
+		######################################
+	# Initializate as for Ohms measurement 4-point
+	#######################################
+
+	def InitializeOhms(self,Compliance = 0.2,RampStep = 0.001,AutoRange = False, ZeroComp = False, SourceRange=100.):
+
+		self.Compliance = Compliance
+		self.RampStep = RampStep
+		self.ZeroComp = ZeroComp
+		self.ColumnNames = "V (V), I (A), R(Ohm)"
+		self.DataColumn = 2
+		# A bunch of commands to configure the 6430
+		self.Visa.write("*RST")
+		time.sleep(.1)
+		self.Output = False
+		self.Visa.write(""":SENS:FUNC "RES" """)
+		self.Visa.write(""":SENS:FUNC "VOLT" """)
+		
+		# Configure the zero compensation
+		if ZeroComp == True:
+			self.Visa.write(":SENS:RES:OCOM ON")
+		else:
+			self.Visa.write(":SENS:RES:OCOM OFF")
+		
+		# Configure manual ohms (no auto-sourcing)
+		self.Visa.write(":SENS:RES:MODE MAN")
+		self.Visa.write(":SOUR:FUNC VOLT")
+		self.Visa.write("FORM:ELEM VOLT, CURR, RES")
+		# Configure 4-point sensing
+		self.Visa.write(":SYST:RSEN ON")
+		
+		self.Visa.write("SENS:CURR:PROT %.6e" %Compliance)
+		
+		#self.Visa.write(":SOUR:VOLT:RANG %.1f" % SourceRange)
+
+		#if AutoRange:
+		#	self.Visa.write(":SENS:RES:RANG:AUTO 0")
+		#else:
+		#	self.Visa.write(":SENS:RES:RANG 10E3")
+		#
+		#self.Visa.write(":SENS:VOLT:PROT:LEV %.3e" % self.Compliance)
+		
+		return
+
+
+	##################################################
+	# Read data
+	################################################
+
+	def ReadData(self):
+		Reply = self.Visa.ask(":READ?")
+		#self.Data = [float(i) for i in Reply.split(",")[0:2]]
+		self.Data = [float(i) for i in Reply.split(",")]
+		pass
+	
+
+	##################################################
+	# Set source
+	##################################################
+
+	def SetOutput(self,Level):
+		self.Visa.write(":SOUR:VOLT %.4e" % Level)
+		pass
+
+	#################################################
+	# Switch the output
+	###############################################
+
+	def SwitchOutput(self):
+		self.Output = not self.Output		
+		self.Visa.write("".join((":OUTP:STAT ","%d" % self.Output)))
+		pass
+
+
+	###################################################
+	# Print a description string 
+	################################################
+	
+	def Description(self):
+		DescriptionString = "Keithley2400"
+		for item in vars(self).items():
+			if item[0] == "Address":
+				DescriptionString = ", ".join((DescriptionString,"%s = %.3f" % item))
+			elif item[0] == "Source" or item[0] == "Sense" or item[0] == "Compliance":
+				DescriptionString = ", ".join((DescriptionString,"%s = %s" % item))
+
+
+		DescriptionString = "".join((DescriptionString,"\n"))
+		return DescriptionString
+
+	############################################
+	######### Ramp the source to a final value
+	#########################################
+	
+	def Ramp(self,VFinish):
+		if self.Output:
+			self.ReadData()
+		VStart = self.Data[0]
+		if abs(VStart-VFinish) > self.RampStep:
+			N = abs((VFinish-VStart)/self.RampStep)
+			VSweep = np.linspace(VStart,VFinish,num=np.ceil(N),endpoint=True)
+
+			if not self.Output:
+				self.SwitchOutput()
+
+			for i in range(len(VSweep)):
+				self.SetOutput(VSweep[i])
+				time.sleep(0.01)
+
+			self.ReadData()
+		
+		return
 
 class k6221:
 	# The 6221 operates only as a source, these functions configure it as an AC source (WAVE mode)

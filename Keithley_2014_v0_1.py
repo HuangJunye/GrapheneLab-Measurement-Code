@@ -58,7 +58,6 @@ class k6430:
 		self.RampStep = 0.1
 		self.ColumnNames = "V (V), I (A)"
 		self.DataColumn = 0
-		self.SourceColumn = 1
 		self.Range = 105e-9
 
 	######################################
@@ -66,16 +65,14 @@ class k6430:
 	#######################################
 
 	def InitializeVoltage(self,Compliance = 105e-9,
-				Median = 0,Repetition =1, Moving= 1,
+				Median = 0,Repetition =1,
 				Integration=1,Delay=0.0,Trigger=0,
-				RampStep = 0.1,Range=105e-9,AutoRange = False, AutoFilter = False, AutoDelay = False):
+				RampStep = 0.1,Range=105e-9,AutoRange = False):
 
 		self.ColumnNames = "V (V), I (A)"
 		self.DataColumn = 1
-		self.SourceColumn = 0
 		self.Source = "VOLT"
 		self.Sense = "CURR"
-		self.Moving = Moving
 		# Special variables for 6430
 		self.Median = Median
 		self.Repetition = Repetition
@@ -108,71 +105,6 @@ class k6430:
 		self.Visa.write(":SENS:CURR:PROT:LEV %.3e" % self.Compliance)
 
 #		# Set some filters
-		
-		if AutoFilter:
-			self.Visa.write(":SENS:AVER:AUTO ON")
-		else:
-			self.Visa.write(":SENS:CURR:NPLC %.2f" % self.Integration)
-			self.Visa.write(":SENS:AVER:REP:COUN %d" % self.Repetition)
-			self.Visa.write(":SENS:AVER:COUN %d" % self.Moving)
-			self.Visa.write(":SENS:MED:RANK %d" % self.Median)
-		
-		
-		if AutoDelay:
-			self.Visa.write(":SOUR:DEL:AUTO ON")
-		else:
-			self.Visa.write(":SOUR:DEL %.4f" % self.Delay)
-		
-		self.Visa.write(":TRIG:DEL %.4f" % self.Trigger)
-		
-		pass
-
-	######################################
-	# Initializate as current source
-	#######################################
-
-	def InitializeCurrent(self,Compliance = 1.0,
-				Median = 0,Repetition =1,
-				Integration=1,Delay=0.0,Trigger=0,
-				RampStep = 0.1,Range=1.0,AutoRange = False):
-
-		self.ColumnNames = "V (V), I (A)"
-		self.DataColumn = 0
-		self.SourceColumn = 1
-		self.Source = "CURR"
-		self.Sense = "VOLT"
-		# Special variables for 6430
-		self.Median = Median
-		self.Repetition = Repetition
-		self.Integration = Integration
-		self.Delay = Delay
-		self.Compliance = Compliance
-		self.RampStep = RampStep
-		self.Range = Range
-
-		# A bunch of commands to configure the 6430
-		self.Visa.write("*RST")
-		time.sleep(.1)
-		self.Visa.write(":SOUR:FUNC:MODE CURR")
-		# Configure the auto zero (reference)
-		self.Visa.write(":SYST:AZER:STAT ON")
-		self.Visa.write(":SYST:AZER:CACH:STAT 1")
-		self.Visa.write(":SYST:AZER:CACH:RES")
-
-		# Disable concurrent mode, measure I and V (not R)
-		self.Visa.write(":SENS:FUNC:CONC 1")
-
-		self.Visa.write(":SENS:FUNC:ON \"VOLT\",\"CURR\"")
-		self.Visa.write(":FORM:ELEM VOLT,CURR")
-		
-		if AutoRange:
-			self.Visa.write(":SENS:VOLT:RANG:AUTO 1")
-		else:
-			self.Visa.write(":SENS:VOLT:RANG %.2e" % self.Range)
-
-		self.Visa.write(":SENS:VOLT:PROT:LEV %.3e" % self.Compliance)
-
-#		# Set some filters
 		self.Visa.write(":SENS:CURR:NPLC %.2f" % self.Integration)
 	
 		self.Visa.write(":SENS:AVER:REP:COUN %d" % self.Repetition)
@@ -182,8 +114,7 @@ class k6430:
 		self.Visa.write(":TRIG:DEL %.4f" % self.Trigger)
 		
 		pass
-
-
+	
 	###########################################
 	# Set the range and compliance
 	#######################################
@@ -276,7 +207,7 @@ class k6430:
 	def Ramp(self,VFinish):
 		if self.Output:
 			self.ReadData()
-		VStart = self.Data[self.SourceColumn]
+		VStart = self.Data[0]
 		if abs(VStart-VFinish) > self.RampStep:	
 			N = abs((VFinish-VStart)/self.RampStep)
 			VSweep = np.linspace(VStart,VFinish,num=np.ceil(N),endpoint=True)
@@ -312,7 +243,7 @@ class k2400:
 	# Initializate as voltage source
 	#######################################
 
-	def InitializeVoltage(self,Compliance = 105e-9,RampStep = 0.1,AutoRange = False,SourceRange=100.):
+	def InitializeVoltage(self,Compliance = 105e-9,RampStep = 0.1,AutoRange = False):
 
 		self.Compliance = Compliance
 		self.RampStep = RampStep
@@ -335,8 +266,6 @@ class k2400:
 		self.Visa.write(":SENS:FUNC:ON \"VOLT\",\"CURR\"")
 		self.Visa.write(":FORM:ELEM VOLT,CURR")
 
-		self.Visa.write(":SOUR:VOLT:RANG %.1f" % SourceRange)
-
 		if AutoRange:
 			self.Visa.write(":SENS:CURR:RANG:AUTO 0")
 		else:
@@ -350,7 +279,7 @@ class k2400:
 	# Set the range and compliance
 	#######################################
 	
-	def SetRangeCompliance(self, Range = 105e-9, Compliance = 0.1):
+	def SetRangeCompliance(self, Range = 105e-9, Compliance = 105e-9):
 
 		self.Compliance = Compliance
 		self.Visa.write("".join((":SENS:",self.Sense,":PROT:LEV %.3e" % self.Compliance)))
@@ -590,111 +519,3 @@ class k6221:
 		
 		return
 
-class k6221k2182a:
-	# This configures the k6221 to work together with k2182 for DC 4-point measurements in Delta mode. 
-
-	def __init__(self,address):
-		self.Name = "Keithley 6221"
-		self.Address = address
-		self.Visa = VisaSubs.InitializeGPIB(address,0,term_chars = "\\n")
-		# Other 6221 properties
-		self.Output = False
-		self.Visa.write(":OUTP 0")
-		self.Data = [0.0 ,0.0]
-		self.Sense = []
-		self.RampStep = 0.1
-		self.ColumnNames = "V (V), I (A)"
-		self.DataColumn = 0
-		self.SourceColumn = 1
-		self.Amplitude=1e-8
-		
-
-	######################################
-	# Initializate as current source and mesure voltage with k2182
-	#######################################
-
-	def InitializeDelta(self, Compliance=0.1,
-				Delay = 0.002, Range = 1.0):
-
-		self.Compliance=Compliance
-		self.Delay= Delay
-		self.Range=Range
-		self.ColumnNames = "I (A)"
-		self.DataColumn = 0
-		self.Source = "CURR"
-                self.Sense = "VOLT"
-		# A bunch of commands to configure the 6221
-		self.Visa.write("*RST")
-		#self.Output=0
-		time.sleep(.1)
-		self.Visa.write(":CURR:COMP %.4e" %Compliance)
-		self.Visa.write(":SOUR:DELT:DEL %.4e" %Delay)
-		self.Visa.write(":SOUR:DELT:COUN INF")
-		self.Visa.write(""":SYST:COMM:SER:SEND "VOLT:RANG %.4e" """ %Range)
-		#self.Visa.write(""":SYST:COMM:SER:SEND "VOLT:RANG BEST" """)
-
-	
-		return
-
-	##################################################
-	# Read Data
-	################################################
-
-	def ReadData(self):
-		Reply = self.Visa.ask(":SENS:DATA?")
-		self.Data = [float(i) for i in Reply.split(",")[0:2]]
-		pass
-
-
-	##################################################
-	# Set source
-	##################################################
-
-	def SetOutput(self,Level):
-		self.Visa.write(":SOUR:DELT:HIGH %.4e" %Level)
-		pass
-
-	#################################################
-	# Switch the output
-	###############################################
-
-	def SwitchOutput(self):
-		self.Output = not self.Output
-		if self.Output:
-			self.Visa.write(":SOUR:DELT:ARM")
-			self.Visa.write(":INIT:IMM")
-			time.sleep(2.0)
-		if not self.Output:
-			self.Visa.write("SOUR:SWE:ABOR")
-		pass
-
-
-	###################################################
-	# Print a description string 
-	################################################
-	
-	def Description(self):
-		DescriptionString = "Keithley6221 with 2182A"
-		for item in vars(self).items():
-			if item[0] == "Address" or item[0] == "Amplitude" or item[0] == "Frequency":
-				DescriptionString = ", ".join((DescriptionString,"%s = %.3f" % item))
-			elif item[0] == "Compliance":
-				DescriptionString = ", ".join((DescriptionString,"%s = %s" % item))
-
-		DescriptionString = "".join((DescriptionString,"\n"))
-		return DescriptionString
-
-	############################################
-	######### Ramp the source to a final value
-	#########################################
-
-	def Ramp(self,VFinish):
-		if not self.Output:
-			self.SetOutput(VFinish)
-			self.SwitchOutput()
-		else:
-			self.SwitchOutput()
-			if VFinish:
-				self.SetOutput(VFinish)
-				self.SwitchOutput()
-		return

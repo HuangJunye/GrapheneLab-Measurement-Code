@@ -7,9 +7,7 @@ Sub programs for communication using PyVisa
 
 author : Eoin O'Farrell
 email : phyoec@nus.edu.sg
-last edit : January 2015
-
-Edited to support PyVisa 1.6
+last edited : July 2013
 
 Functions written:
 	InitializeGPIB
@@ -20,24 +18,11 @@ import visa as visa
 
 # initalize GPIB devices using PyVisa
 
-def InitializeGPIB(address, board, QueryID=True, ReadTermination = "LF"
-                    , **kwargs):
-	rm = visa.ResourceManager()
-        GPIBName = "GPIB%d::%d::INSTR" % (board,address)
-#        print GPIBName
-        try:
-		GPIBVisa = rm.open_resource(GPIBName)
-                if ReadTermination == "LF":
-                    GPIBVisa.read_termination = "\n"
-                    GPIBVisa.write_termination = "\n"                    
-                elif ReadTermination == "CR":
-                    GPIBVisa.read_termination = "\r"
-                    GPIBVisa.write_termination = "\r"
-                elif ReadTermination == "CRLF":
-                    GPIBVisa.read_termination = "\r\n"
-                    GPIBVisa.write_termination = "\r\n"
+def InitializeGPIB(address, board, QueryID=True, **kwargs):
+	try:
+		GPIBVisa = visa.GpibInstrument(address,board)
 		for kw in kwargs.keys():
-		        tmp = "".join(("GPIBVisa.",kw,"=",kwargs[kw]))
+			tmp = "".join(("GPIBVisa.",kw,"=\"",kwargs[kw],"\""))
 			exec(tmp)
 		if QueryID:
 			print GPIBVisa.ask("*IDN?")
@@ -49,18 +34,11 @@ def InitializeGPIB(address, board, QueryID=True, ReadTermination = "LF"
 
 # initialize Serial devices using PyVisa
 
-def InitializeSerial(name,idn="*IDN?",ReadTermination="LF", **kwargs):
-	rm = visa.ResourceManager()        
+def InitializeSerial(name,idn="*IDN?", **kwargs):
 	try:
-		SerialVisa = rm.open_resource(name)
-                if ReadTermination == "LF":
-                    SerialVisa.read_termination = "\n"
-                elif ReadTermination == "CR":
-                    SerialVisa.read_termination = "\r"
-                elif ReadTermination == "CRLF":
-                    SerialVisa.read_termination = "\r\n"
+		SerialVisa = visa.SerialInstrument(name)
 		for kw in kwargs.keys():
-			tmp = "".join(("SerialVisa.",kw,"=",kwargs[kw]))
+			tmp = "".join(("SerialVisa.",kw,"=\"",kwargs[kw],"\""))
 			exec(tmp)
 		print SerialVisa.ask(idn)
 	except Exception:

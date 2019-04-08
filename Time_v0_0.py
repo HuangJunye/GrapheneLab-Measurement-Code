@@ -12,7 +12,7 @@ last edited : Feb 2016
 
 """
 
-#import rpyc
+import rpyc
 import string as string
 import re as re
 from collections import namedtuple
@@ -47,13 +47,12 @@ class Timer:
 	#	pass
 	
 	def ReadData(self):
-		Reply = time.time()-self.InitTime		
+		Reply = time.time()-self.InitTime
 		self.Data = [Reply]
 		pass
 	
 	def Initialize(self):
 		self.InitTime = time.time()
-		print "Initialize timer"
 		pass
 		
 	def SetOutput(self,Level):
