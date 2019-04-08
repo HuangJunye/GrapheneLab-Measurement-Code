@@ -53,7 +53,9 @@ class MControl():
     
     def __init__(self):
         # Connect visa to the magnet
-        self.Visa = VisaSubs.InitializeSerial("ASRL6::INSTR")
+        self.Visa = VisaSubs.InitializeSerial("ASRL11::INSTR")
+		    # Add Timeout to 200s
+        self.Visa.timeout=200000
         # Open the socket
         address = ('localhost',18861)
         self.Server = SocketUtils.SockServer(address)
@@ -286,7 +288,7 @@ class MControl():
         else:
             HeaterString = "OFF"
         
-        print "Connected to magnet... Heater is %s, Field is %.3f, Magnet conversion = %.3f A/T, Maximum current = %.3f" % (HeaterString, self.Field, self.AToB, self.CurrentLimit)
+        print "Connected to magnet... Heater is %s, Field is %.4f, Magnet conversion = %.4f A/T, Maximum current = %.3f" % (HeaterString, self.Field, self.AToB, self.CurrentLimit)
         
         return
     
@@ -317,12 +319,12 @@ class MControl():
 	
     def QueryAtTarget(self):
     	if abs(self.TargetField) < 1.0:
-			if abs(self.Field-self.TargetField) < 0.0003:
-				AtTarget = True
-			else:
-				AtTarget = False
+	    if abs(self.Field-self.TargetField) < 0.004:
+	        AtTarget = True
+	    else:
+		AtTarget = False
         else:
-            if (abs((self.Field-self.TargetField)/self.TargetField) <= 0.00035):
+            if (abs((self.Field-self.TargetField)/self.TargetField) <= 0.0035):
                 AtTarget = True
             else:
                 AtTarget = False
@@ -358,7 +360,7 @@ class MControl():
                     self.Rate = self.MaxRate
                     self.UpdateReady()
                     if not self.Ready:
-                        print "Got new set point from socket %.2f T" % self.TargetField
+                        print "Got new set point from socket %.4f T" % self.TargetField
             except:
                 pass
 
@@ -375,7 +377,7 @@ class MControl():
                     self.TargetHeater = NewHeater
                     self.UpdateReady()
                     if not self.Ready:
-                        print "Got new sweep point from socket to %.2f T at %.2f T/min" % (self.TargetField,self.Rate/self.AToB)
+                        print "Got new sweep point from socket to %.4f T at %.4f T/min" % (self.TargetField,self.Rate/self.AToB)
             except:
                 pass
             

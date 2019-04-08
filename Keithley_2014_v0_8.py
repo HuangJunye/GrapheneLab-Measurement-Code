@@ -21,7 +21,7 @@ Classes for:
 
 """
 
-import rpyc
+# import rpyc
 import visa as visa
 import VisaSubs as VisaSubs
 import string as string
@@ -134,7 +134,7 @@ class k6430:
 	def InitializeCurrent(self,Compliance = 1.0,
 				Median = 0,Repetition =1,
 				Integration=1,Delay=0.0,Trigger=0,
-				RampStep = 0.1,Range=1.0,AutoRange = False):
+				RampStep = 0.1,Range=1.0,AutoRange = False, NPLC=1.0):
 
 		self.ColumnNames = "V (V), I (A)"
 		self.DataColumn = 0
@@ -149,6 +149,7 @@ class k6430:
 		self.Compliance = Compliance
 		self.RampStep = RampStep
 		self.Range = Range
+		self.Visa.write(":SENS:VOLT:NPLC %.6e" % NPLC)
 
 		# A bunch of commands to configure the 6430
 		self.Visa.write("*RST")
@@ -432,11 +433,12 @@ class k2400:
 	# Initializate as for Ohms measurement 4-point
 	#######################################
 
-	def InitializeOhms(self,Compliance = 0.2,RampStep = 1.0e-8,AutoRange = False, ZeroComp = False, SourceRange=100.):
+	def InitializeOhms(self,Compliance = 0.2,RampStep = 1.0e-8,AutoRange = False, ZeroComp = False, SourceRange=100., NPLC=1.0):
 
 		self.Compliance = Compliance
 		self.RampStep = RampStep
 		self.ZeroComp = ZeroComp
+		self.NPLC = NPLC
 		self.ColumnNames = "V (V), I (A), R(Ohm)"
 		self.DataColumn = 2
 		self.Data = [0.0, 0.0, 0.0]
@@ -446,6 +448,7 @@ class k2400:
 		self.Output = False
 		self.Visa.write(""":SENS:FUNC "RES" """)
 		self.Visa.write(""":SENS:FUNC "CURR" """)
+		self.Visa.write(":SENS:RES:NPLC %.6e" %NPLC)
 		
 		# Configure the zero compensation
 		if ZeroComp == True:

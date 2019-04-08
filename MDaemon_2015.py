@@ -49,7 +49,7 @@ class MControl():
     
     def __init__(self):
         # Connect visa to the magnet
-        self.Visa = VisaSubs.InitializeSerial("ASRL6::INSTR")
+        self.Visa = VisaSubs.InitializeSerial("ASRL11::INSTR")
         # Open the socket
         address = ('localhost',18861)
         self.Server = SocketUtils.SockServer(address)
@@ -313,10 +313,10 @@ class MControl():
 	
     def QueryAtTarget(self):
     	if abs(self.TargetField) < 1.0:
-			if abs(self.Field-self.TargetField) < 0.004:
-				AtTarget = True
-			else:
-				AtTarget = False
+	    if abs(self.Field-self.TargetField) < 0.004:
+	        AtTarget = True
+	    else:
+		      AtTarget = False
         else:
             if (abs((self.Field-self.TargetField)/self.TargetField) <= 0.0035):
                 AtTarget = True
