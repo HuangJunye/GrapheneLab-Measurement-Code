@@ -5,9 +5,9 @@
 
 Sub programs for doing the measurements
 
-author : Eoin O'Farrell
-email : phyoec@nus.edu.sg
-last edited : March 2014
+original author : Eoin O'Farrell
+current author : Huang Junye
+last edited : Apr 2019
 
 Explantion:
 
@@ -54,11 +54,9 @@ import asyncore
 import h5py
 from scipy import interpolate
 
-import VisaSubs as VisaSubs
-import SrsLia as LIA
-import Keithley_2014_v0_4 as keithley
-import SocketUtils as SocketUtils
-import MeasurementSubs_2014 as MeasurementUtils
+# Import sub routines files
+import utils.SocketUtils as SocketUtils
+import utils.MeasurementSubs_DF as MeasurementUtils
 
 from itertools import cycle
 from sys import exit
