@@ -49,7 +49,7 @@ class TControl():
 		# start the server
 		address = ('localhost', 18871)
 		self.Server = SocketUtils.SockServer(address)
-		self.Temperature = np.zeros((2,)) 		
+		self.Temperature = np.zeros((2,))		 
 		self.SensorName = ["Probe", "VTI"]
 		self.SensorLocation = ["A","B"]		
 		self.SetTemp = np.zeros((2,))

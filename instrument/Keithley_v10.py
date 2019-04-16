@@ -744,7 +744,7 @@ class k6221k2182a:
 		self.ColumnNames = "I (A)"
 		self.DataColumn = 0
 		self.Source = "CURR"
-                self.Sense = "VOLT"
+				self.Sense = "VOLT"
 		# A bunch of commands to configure the 6221
 		self.Visa.write("*RST")
 		#self.Output=0
