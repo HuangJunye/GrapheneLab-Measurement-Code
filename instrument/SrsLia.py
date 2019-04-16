@@ -42,9 +42,9 @@ ToDo:
 
 """
 
-import rpyc
+#import rpyc
 import visa as visa
-import VisaSubs as VisaSubs
+import utils.VisaSubs as VisaSubs
 import string as string
 import re as re
 from collections import namedtuple
@@ -166,7 +166,7 @@ class SrsLia:
 	def ReadOffset(self,**kwargs):
 		
 		# set the offsets to zero
-		if "auto" in kwargs.keys():
+		if "auto" in list(kwargs.keys()):
 			self.Visa.write("OEXP 1,0,0")
 			self.Visa.write("OEXP 2,0,0")
 			time.sleep(1)
@@ -182,7 +182,7 @@ class SrsLia:
 			self.Offset[i] = float(Reply[0])
 			self.Expand[i] = float(Reply[1])
 
-		if "auto" in kwargs.keys():
+		if "auto" in list(kwargs.keys()):
 			self.Visa.write("".join(("OEXP 1,","%.2f," % self.Offset[0],"%d" % kwargs["auto"])))
 			self.Visa.write("".join(("OEXP 2,","%.2f," % self.Offset[1],"%d" % kwargs["auto"])))
 			self.Expand[0] = kwargs["auto"]
@@ -199,7 +199,7 @@ class SrsLia:
 
 	def Description(self):
 		DescriptionString = "SrsLia"
-		for item in vars(self).items():
+		for item in list(vars(self).items()):
 			if item[0] == "Tau" or item[0] == "Excitation" or item[0] == "Frequency" or item[0] == "Harmonic" or item[0] == "Address" or item[0] == "Phase" or item[0] == "Sensitivity" or item[0] == "InternalExcitation":
 				DescriptionString = ", ".join((DescriptionString,"%s = %.3f" % item))
 			#elif item[0] == "Expand" or item[0] == "Offset":

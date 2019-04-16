@@ -31,7 +31,7 @@ import time
 import math
 import numpy as np
 import threading
-import Queue
+import queue
 
 ######################################################
 # At the moment each of the instruments we use is a
@@ -263,7 +263,7 @@ class k6430:
 	
 	def Description(self):
 		DescriptionString = "Keithley6430"
-		for item in vars(self).items():
+		for item in list(vars(self).items()):
 			if item[0] == "Address":
 				DescriptionString = ", ".join((DescriptionString,"%s = %.3f" % item))
 			elif item[0] == "Source" or item[0] == "Sense" or item[0] == "Compliance":
@@ -399,7 +399,7 @@ class k2400:
 	
 	def Description(self):
 		DescriptionString = "Keithley2400"
-		for item in vars(self).items():
+		for item in list(vars(self).items()):
 			if item[0] == "Address":
 				DescriptionString = ", ".join((DescriptionString,"%s = %.3f" % item))
 			elif item[0] == "Source" or item[0] == "Sense" or item[0] == "Compliance":
@@ -515,7 +515,7 @@ class k2400:
 	
 	def Description(self):
 		DescriptionString = "Keithley2400"
-		for item in vars(self).items():
+		for item in list(vars(self).items()):
 			if item[0] == "Address":
 				DescriptionString = ", ".join((DescriptionString,"%s = %.3f" % item))
 			elif item[0] == "Source" or item[0] == "Sense" or item[0] == "Compliance":
@@ -680,7 +680,7 @@ class k6221:
 	
 	def Description(self):
 		DescriptionString = "Keithley6221"
-		for item in vars(self).items():
+		for item in list(vars(self).items()):
 			if item[0] == "Address" or item[0] == "Amplitude" or item[0] == "Frequency":
 				DescriptionString = ", ".join((DescriptionString,"%s = %.3f" % item))
 			elif item[0] == "Compliance":
@@ -793,7 +793,7 @@ class k6221k2182a:
 	
 	def Description(self):
 		DescriptionString = "Keithley6221 with 2182A"
-		for item in vars(self).items():
+		for item in list(vars(self).items()):
 			if item[0] == "Address" or item[0] == "Amplitude" or item[0] == "Frequency":
 				DescriptionString = ", ".join((DescriptionString,"%s = %.3f" % item))
 			elif item[0] == "Compliance":
@@ -885,7 +885,7 @@ class k2182a:
 			self.Visa.write(":SENS:VOLT:REF:ACQ")
 			self.Visa.write(":SENS:VOLT:REF:STAT 1")
 			Reply = self.Visa.ask(":SENS:VOLT:REF?")
-			print Reply
+			print(Reply)
 			self.RelativeValue = float(Reply)
 		
 		pass
@@ -922,7 +922,7 @@ class k2182a:
 	
 	def Description(self):
 		DescriptionString = "Keithley2182"
-		for item in vars(self).items():
+		for item in list(vars(self).items()):
 			if item[0] == "Address":
 				DescriptionString = ", ".join((DescriptionString,"%s = %.3f" % item))
 			elif item[0] == "Sense" or item[0] == "Range" or item[0] == "Relative" or item[0] == "RelativeValue":
@@ -1012,7 +1012,7 @@ class gaussmeter:
 	
 	def Description(self):
 		DescriptionString = "Lake Shore Gaussmeter"
-		for item in vars(self).items():
+		for item in list(vars(self).items()):
 			if item[0] == "Address":
 				DescriptionString = ", ".join((DescriptionString,"%s = %.3f" % item))
 			elif item[0] == "Source" or item[0] == "Sense" or item[0] == "Compliance":
@@ -1030,7 +1030,7 @@ class gaussmeter:
 		time1=float(self.Visa.ask(":RDGFIELD?"))
 		time2=4*abs(VFinish-time1)/50
 		self.Visa.write("CSETP %.4e" % VFinish)
-		print "Ramping to Field Value"
+		print("Ramping to Field Value")
 		time.sleep(time2)
 		
 		return
