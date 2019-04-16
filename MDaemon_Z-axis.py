@@ -216,7 +216,7 @@ class MControl():
         self.MagnetReadHeater()
 	HeaterAfter = self.Heater
         if HeaterAfter != HeaterBefore:
-            print "Heater switched ... locking for 2 minutes..."
+            print("Heater switched ... locking for 2 minutes...")
             self.Lock = True
             self.LockTime = datetime.now()
             
@@ -293,7 +293,7 @@ class MControl():
         else:
             HeaterString = "OFF"
         
-        print "Connected to magnet... Heater is %s, Field is %.4f, Magnet conversion = %.4f A/T, Maximum current = %.3f" % (HeaterString, self.Field, self.AToB, self.CurrentLimit)
+        print("Connected to magnet... Heater is %s, Field is %.4f, Magnet conversion = %.4f A/T, Maximum current = %.3f" % (HeaterString, self.Field, self.AToB, self.CurrentLimit))
         
         return
     
@@ -319,7 +319,7 @@ class MControl():
             
         SetRate = self.MagnetReadNumeric("RCST")
         self.MagnetSetAction("RTOS")
-        print "Ramping source to %.4f A at %.4f A/m\n" % (CSet,SetRate)
+        print("Ramping source to %.4f A at %.4f A/m\n" % (CSet,SetRate))
         return
 	
     def QueryAtTarget(self):
@@ -365,7 +365,7 @@ class MControl():
                     self.Rate = self.MaxRate
                     self.UpdateReady()
                     if not self.Ready:
-                        print "Got new set point from socket %.4f T" % self.TargetField
+                        print("Got new set point from socket %.4f T" % self.TargetField)
             except:
                 pass
 
@@ -382,7 +382,7 @@ class MControl():
                     self.TargetHeater = NewHeater
                     self.UpdateReady()
                     if not self.Ready:
-                        print "Got new sweep point from socket to %.4f T at %.4f T/min" % (self.TargetField,self.Rate/self.AToB)
+                        print("Got new sweep point from socket to %.4f T at %.4f T/min" % (self.TargetField,self.Rate/self.AToB))
             except:
                 pass
             
@@ -426,7 +426,7 @@ if __name__ == '__main__':
             if Wait.seconds >= 120.0:
                 # Unlock
                 control.Lock = False
-                print "Unlocking..."
+                print("Unlocking...")
 
 
 

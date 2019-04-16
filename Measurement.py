@@ -92,11 +92,11 @@ def DoDeviceSweep(GraphProc,rpg,DataFile,SweepInst,ReadInst,
 	if TSet > 0:
 		Msg = " ".join(("SET","%.2f" % TSet))
 		MeasurementUtils.SocketWrite(TClient,Msg)
-		print "Wrote message to temperature socket \"%s\"" % Msg
+		print("Wrote message to temperature socket \"%s\"" % Msg)
 	if not IgnoreMagnet:
 		Msg = " ".join(("SET","%.4f" % BSet,"%d" % int(not Persist)))
 		MeasurementUtils.SocketWrite(MClient,Msg)
-		print "Wrote message to Magnet socket \"%s\"" % Msg
+		print("Wrote message to Magnet socket \"%s\"" % Msg)
 	time.sleep(5)
 
 	# give precedence to the magnet and wait for the timeout
@@ -104,7 +104,7 @@ def DoDeviceSweep(GraphProc,rpg,DataFile,SweepInst,ReadInst,
 	MSocket = MeasurementUtils.SocketRead(MClient, MSocket)
 	if not IgnoreMagnet:
 		while MSocket[1] != 1:
-			print "Waiting for magnet!"
+			print("Waiting for magnet!")
 			time.sleep(15)
 			TSocket = MeasurementUtils.SocketRead(TClient, TSocket)
 			MSocket = MeasurementUtils.SocketRead(MClient, MSocket)
@@ -114,7 +114,7 @@ def DoDeviceSweep(GraphProc,rpg,DataFile,SweepInst,ReadInst,
 	while (TSocket[1] != 1) and (Remaining > 0):
 		NowTime = datetime.now()
 		Remaining = Timeout*60.0 - float((NowTime-SetTime).seconds)
-		print "Waiting for temperature ... time remaining = %.2f minutes" % (Remaining/60.0)
+		print("Waiting for temperature ... time remaining = %.2f minutes" % (Remaining/60.0))
 		TSocket = MeasurementUtils.SocketRead(TClient, TSocket)
 		MSocket = MeasurementUtils.SocketRead(MClient, MSocket)	
 		time.sleep(15)
@@ -145,7 +145,7 @@ def DoDeviceSweep(GraphProc,rpg,DataFile,SweepInst,ReadInst,
 					else:
 						Set = Set + [0]*(len(SetInst)-len(Set))
 				for i,v in enumerate(SetInst):
-					print "Ramping %s to %.2e" % (v.Name, Set[i])
+					print("Ramping %s to %.2e" % (v.Name, Set[i]))
 					v.Ramp(Set[i])
 
 	if SweepStart != 0:
@@ -159,17 +159,17 @@ def DoDeviceSweep(GraphProc,rpg,DataFile,SweepInst,ReadInst,
 	SweepInst.ReadData()
 
 	if Wait >= 0.0:
-		print "Waiting %.2f minute!" % Wait		
+		print("Waiting %.2f minute!" % Wait)		
 		WaitTime = datetime.now()
 		Remaining = Wait*60.0
 		while (Remaining > 0):
 			NowTime = datetime.now()
 			Remaining = Wait*60.0 - float((NowTime-WaitTime).seconds)
-			print "Waiting ... time remaining = %.2f minutes" % (Remaining/60.0)
+			print("Waiting ... time remaining = %.2f minutes" % (Remaining/60.0))
 			TSocket = MeasurementUtils.SocketRead(TClient, TSocket)
 			MSocket = MeasurementUtils.SocketRead(MClient, MSocket)	
 			time.sleep(15)
-	print "Starting measurement!"
+	print("Starting measurement!")
 
 	StartTime = datetime.now()
 
@@ -230,7 +230,7 @@ def DoDeviceSweep(GraphProc,rpg,DataFile,SweepInst,ReadInst,
 
 	if SetInst:
 		if len(FinishValue) != len(SetInst):
-			print "Warning: len(SetInst) != len(FinishValue)"
+			print("Warning: len(SetInst) != len(FinishValue)")
 			#print SetInst, FinishValue
 			if len(FinishValue) > len(SetInst):
 				FinishValue = FinishValue[0:len(SetInst)]
@@ -238,7 +238,7 @@ def DoDeviceSweep(GraphProc,rpg,DataFile,SweepInst,ReadInst,
 				FinishValue = FinishValue + SetValue[len(FinishValue):len(SetInst)]
 		"Final ramps"
 		for i,v in enumerate(SetInst):
-			print "Ramping %s to %.2e" % (v.Name, FinishValue[i])
+			print("Ramping %s to %.2e" % (v.Name, FinishValue[i]))
 			v.Ramp(FinishValue[i])
 	
 	if ReturnData:
@@ -288,7 +288,7 @@ def DoFridgeSweep(GraphProc,rpg,DataFile,
 	if FridgeSweep == "B":
 		BSweep = True
 		if IgnoreMagnet:
-			print "Error cannot ignore magnet for BSweep! Exiting!"
+			print("Error cannot ignore magnet for BSweep! Exiting!")
 			exit(0)
 	else:
 		BSweep = False
@@ -309,11 +309,11 @@ def DoFridgeSweep(GraphProc,rpg,DataFile,
 	# Tell the magnet daemon to go to the inital field and set the temperature
 	Msg = " ".join(("SET","%.2f" % TSet[0]))
 	MeasurementUtils.SocketWrite(TClient,Msg)
-	print "Wrote message to temperature socket \"%s\"" % Msg
+	print("Wrote message to temperature socket \"%s\"" % Msg)
 
 	Msg = " ".join(("SET","%.4f" % BSet[0],"%d" % int(not StartPersist)))
 	MeasurementUtils.SocketWrite(MClient,Msg)
-	print "Wrote message to Magnet socket \"%s\"" % Msg
+	print("Wrote message to Magnet socket \"%s\"" % Msg)
 	time.sleep(5)
 
 	# give precedence to the magnet and wait for the timeout
@@ -321,7 +321,7 @@ def DoFridgeSweep(GraphProc,rpg,DataFile,
 	MSocket = MeasurementUtils.SocketRead(MClient, MSocket)
 	if not IgnoreMagnet:
 		while MSocket[1] != 1:
-			print "Waiting for magnet!"
+			print("Waiting for magnet!")
 			time.sleep(15)
 			TSocket = MeasurementUtils.SocketRead(TClient, TSocket)
 			MSocket = MeasurementUtils.SocketRead(MClient, MSocket)
@@ -331,7 +331,7 @@ def DoFridgeSweep(GraphProc,rpg,DataFile,
 	while (TSocket[1] != 1) and (Remaining > 0):
 		NowTime = datetime.now()
 		Remaining = Timeout*60.0 - float((NowTime-SetTime).seconds)
-		print "Waiting for temperature ... time remaining = %.2f minutes" % (Remaining/60.0)
+		print("Waiting for temperature ... time remaining = %.2f minutes" % (Remaining/60.0))
 		TSocket = MeasurementUtils.SocketRead(TClient, TSocket)
 		MSocket = MeasurementUtils.SocketRead(MClient, MSocket)	
 		time.sleep(15)
@@ -358,21 +358,21 @@ def DoFridgeSweep(GraphProc,rpg,DataFile,
 					else:
 						Set = Set + [0]*(len(SetInst)-len(Set))
 				for i,v in enumerate(SetInst):
-					print "Ramping %s to %.2e" % (v.Name, Set[i])
+					print("Ramping %s to %.2e" % (v.Name, Set[i]))
 					v.Ramp(Set[i])
 	
 	if Wait >= 0.0:
-		print "Waiting %.2f minute!" % Wait		
+		print("Waiting %.2f minute!" % Wait)		
 		WaitTime = datetime.now()
 		Remaining = Wait*60.0
 		while (Remaining > 0):
 			NowTime = datetime.now()
 			Remaining = Wait*60.0 - float((NowTime-WaitTime).seconds)
-			print "Waiting ... time remaining = %.2f minutes" % (Remaining/60.0)
+			print("Waiting ... time remaining = %.2f minutes" % (Remaining/60.0))
 			TSocket = MeasurementUtils.SocketRead(TClient, TSocket)
 			MSocket = MeasurementUtils.SocketRead(MClient, MSocket)	
 			time.sleep(15)
-	print "Starting measurement!"
+	print("Starting measurement!")
 
 	StartTime = datetime.now()
 
@@ -388,11 +388,11 @@ def DoFridgeSweep(GraphProc,rpg,DataFile,
 	if BSweep:
 		Msg = " ".join(("SWP","%.4f" % BSet[1], "%.4f" % SweepRate,"%d" % int(not Persist)))
 		MeasurementUtils.SocketWrite(MClient,Msg)
-		print "Wrote message to magnet socket \"%s\"" % Msg
+		print("Wrote message to magnet socket \"%s\"" % Msg)
 	else:
 		Msg = " ".join(("SWP","%.4f" % TSet[1], "%.4f" % SweepRate, "%.2f" % MaxOverTime))
 		MeasurementUtils.SocketWrite(TClient,Msg)
-		print "Wrote message to temperature socket \"%s\"" % Msg	
+		print("Wrote message to temperature socket \"%s\"" % Msg)	
 
 	TSocket = MeasurementUtils.SocketRead(TClient, TSocket)
 	MSocket = MeasurementUtils.SocketRead(MClient, MSocket)
@@ -473,7 +473,7 @@ def DoFridgeSweep(GraphProc,rpg,DataFile,
 			else:
 				FinishValue = FinishValue + SetValue[len(FinishValue):len(SetInst)]
 		for i,v in enumerate(SetInst):
-			print "Ramping %s to %.2e" % (v.Name, FinishValue[i])
+			print("Ramping %s to %.2e" % (v.Name, FinishValue[i]))
 			v.Ramp(FinishValue[i])
 	
 	if ReturnData:
@@ -485,11 +485,11 @@ def DoFridgeSweep(GraphProc,rpg,DataFile,
 	if BSweep:
 		Msg = " ".join(("SET","%.4f" % SweepFinish,"%d" % int(not Persist)))
 		MeasurementUtils.SocketWrite(MClient,Msg)
-		print "Wrote message to Magnet socket \"%s\"" % Msg
+		print("Wrote message to Magnet socket \"%s\"" % Msg)
 	else:
 		Msg = " ".join(("SET","%.2f" % SweepFinish))
 		MeasurementUtils.SocketWrite(TClient,Msg)
-		print "Wrote message to temperature socket \"%s\"" % Msg
+		print("Wrote message to temperature socket \"%s\"" % Msg)
 
 	# Copy the file to the network
 	time.sleep(5)

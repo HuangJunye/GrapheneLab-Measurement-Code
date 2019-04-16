@@ -163,38 +163,38 @@ class TControl():
 				if abs(self.SetTemp[Tindex]-NewSet) > 0.05:
 					if self.SweepMode:
 						# We are sweeping so kill the sweep
-						print "Killing sweep..."
+						print("Killing sweep...")
 						self.Visa.write("RAMP 1,0,0")
 					self.UpdateSetTemp(NewSet)
 					# Set at set to be false and write the new set point
 					self.AtSet = False
 					self.SweepMode = False
 					self.WriteSetpoint()
-					print "Got probe set point from socket %.2f\n" % self.SetTemp[Tindex]
+					print("Got probe set point from socket %.2f\n" % self.SetTemp[Tindex])
 			except:
 				pass
 		if Msg[0] == "SWP":
-			print "Got temperature sweep"
+			print("Got temperature sweep")
 			Tindex = 0
 			try:
 				self.SweepFinish = float(Msg[1])
 				if abs(self.SweepFinish - self.SetTemp[Tindex]) > 0.05:
-					print "SetTemp = %.3f\t " % self.SetTemp[Tindex]					
+					print("SetTemp = %.3f\t " % self.SetTemp[Tindex])					
 					self.SweepRate = abs(float(Msg[2]))					
 					# Check if the sweep is up or down
-					print "%.3f" % self.SweepFinish
-					print "%.3f" % self.SetTemp[Tindex]
+					print("%.3f" % self.SweepFinish)
+					print("%.3f" % self.SetTemp[Tindex])
 					if self.SweepFinish >= self.SetTemp[Tindex]:
 						self.SweepDirection = 1.0
 					else:
 						self.SweepDirection = -1.0
-					print "==============SweepDirection = %.3f\t " % self.SweepDirection
+					print("==============SweepDirection = %.3f\t " % self.SweepDirection)
 					# Put the LS340 into ramp mode
 					repl = self.Visa.ask("RAMP?1")
-					print "%s" % repl					
+					print("%s" % repl)					
 					self.Visa.write("RAMP 1,1,%.3f" % self.SweepRate)
 					repl = self.Visa.ask("RAMP?1")
-					print "%s" % repl
+					print("%s" % repl)
 					
 					#update all ZONE parameters using a new ramp rate					
 					ZONEmsg = "".join("ZONE 1,1,+07.000,+0050.0,+0040.0,+000.0,+000.00,1,0,+00%s" % self.SweepRate)
@@ -208,14 +208,14 @@ class TControl():
 					
 					self.AtSet = False
 					self.SweepTimeLength = abs(self.SetTemp[Tindex] - self.SweepFinish)/self.SweepRate
-					print "Got temperature sweep to %.2f K at %.2f K/min... Sweep takes %.2f minutes, maximum over time is %.2f" % (self.SweepFinish, self.SweepRate, self.SweepTimeLength, self.SweepMaxOverTime)
+					print("Got temperature sweep to %.2f K at %.2f K/min... Sweep takes %.2f minutes, maximum over time is %.2f" % (self.SweepFinish, self.SweepRate, self.SweepTimeLength, self.SweepMaxOverTime))
 					# Write the finish temp
 					self.UpdateSetTemp(self.SweepFinish)
 					# Write the setpoint to start the ramp
 					self.WriteSetpoint()
 					self.SweepMode = True
 					self.SweepStartTime = datetime.now()
-					print "Starting the sweep\n"
+					print("Starting the sweep\n")
 			except:
 				pass
 		if Msg[0] == "T_ERROR":
@@ -254,10 +254,10 @@ class TControl():
 		if dT > (self.SweepTimeLength + self.SweepMaxOverTime):
 			# The sweep ran out of time, stop it
 			SweepFinished = True
-			print "Sweep over time... Finishing..."
+			print("Sweep over time... Finishing...")
 		elif (self.Temperature[Tindex] - self.SweepFinish)*self.SweepDirection > 0.0:
 			SweepFinished = True
-			print "Final temperature reached... Finishing..."
+			print("Final temperature reached... Finishing...")
 		else:
 			SweepFinished = False
 		if SweepFinished:
@@ -286,7 +286,7 @@ class TControl():
 			StatusString += "%s = %.3f K; " % (self.SensorName[i],self.Temperature[i])
 
 		StatusString += "Status message = %d\n" % self.StatusMsg
-		print StatusString
+		print(StatusString)
 		self.LastStatusTime = datetime.now()
 		return
 

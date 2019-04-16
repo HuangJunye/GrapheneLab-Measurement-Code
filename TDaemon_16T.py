@@ -220,7 +220,7 @@ class TControl():
 				if abs(self.SetTemp[1]-NewSet) > 0.05:
 					if self.SweepMode:
 						# We are sweeping so kill the sweep
-						print "Killing sweep..."
+						print("Killing sweep...")
 						self.Visa.write("RAMP 1,0,0")
 						self.Visa.write("RAMP 2,0,0")
 					self.UpdateSetTemp(NewSet)
@@ -228,7 +228,7 @@ class TControl():
 					self.AtSet = False
 					self.SweepMode = False
 					self.WriteSetpoint()
-					print "Got probe set point from socket %.2f\n" % self.SetTemp[1]
+					print("Got probe set point from socket %.2f\n" % self.SetTemp[1])
 			except:
 				pass
 
@@ -248,14 +248,14 @@ class TControl():
 					self.Visa.write("RAMP 2,1,%.3f" % self.SweepRate)
 					self.AtSet = False
 					self.SweepTimeLength = abs(self.SetTemp[1] - self.SweepFinish)/self.SweepRate
-					print "Got temperature sweep to %.2f K at %.2f K/min... Sweep takes %.2f minutes, maximum over time is %.2f" % (self.SweepFinish, self.SweepRate, self.SweepTimeLength, self.SweepMaxOverTime)
+					print("Got temperature sweep to %.2f K at %.2f K/min... Sweep takes %.2f minutes, maximum over time is %.2f" % (self.SweepFinish, self.SweepRate, self.SweepTimeLength, self.SweepMaxOverTime))
 					# Write the finish temp
 					self.UpdateSetTemp(self.SweepFinish)
 					# Write the setpoint to start the ramp
 					self.WriteSetpoint()
 					self.SweepMode = True
 					self.SweepStartTime = datetime.now()
-					print "Starting the sweep\n"
+					print("Starting the sweep\n")
 			except:
 				pass
 		
@@ -299,10 +299,10 @@ class TControl():
 		if dT > (self.SweepTimeLength + self.SweepMaxOverTime):
 			# The sweep ran out of time, stop it
 			SweepFinished = True
-			print "Sweep over time... Finishing..."
+			print("Sweep over time... Finishing...")
 		elif (self.Temperature[1] - self.SweepFinish)*self.SweepDirection > 0.0:
 			SweepFinished = True
-			print "Final temperature reached... Finishing..."
+			print("Final temperature reached... Finishing...")
 		else:
 			SweepFinished = False
 
@@ -339,7 +339,7 @@ class TControl():
 
 		StatusString += "He Pot Temp = %.2f K;" % self.PotTemperature
 		StatusString += "Status message = %d\n" % self.StatusMsg
-		print StatusString
+		print(StatusString)
 		
 		self.LastStatusTime = datetime.now()
 		return

@@ -226,7 +226,7 @@ class TControl():
 					# Set at set to be false and write the new set point
 					self.AtSet = False
 					self.SweepMode = False
-					print "Got probe set point from socket %.2f\n" % self.SetTemp
+					print("Got probe set point from socket %.2f\n" % self.SetTemp)
 			except:
 				pass
 
@@ -247,12 +247,12 @@ class TControl():
 					# Put the LS340 into ramp mode
 					self.AtSet = False
 					self.SweepTimeLength = abs(self.SetTemp - self.SweepFinish)/self.SweepRate
-					print "Got temperature sweep to %.2f mK at %.2f mK/min... Sweep takes %.2f minutes, maximum over time is %.2f" % (self.SweepFinish, self.SweepRate, self.SweepTimeLength, self.SweepMaxOverTime)
+					print("Got temperature sweep to %.2f mK at %.2f mK/min... Sweep takes %.2f minutes, maximum over time is %.2f" % (self.SweepFinish, self.SweepRate, self.SweepTimeLength, self.SweepMaxOverTime))
 					# Write the finish temp
 					# Write the setpoint to start the ramp
 					self.SweepMode = True
 					self.SweepStartTime = datetime.now()
-					print "Starting the sweep\n"
+					print("Starting the sweep\n")
 			except:
 				pass
 		
@@ -279,10 +279,10 @@ class TControl():
 		if dTMin > (self.SweepTimeLength + self.SweepMaxOverTime):
 			# The sweep ran out of time, stop it
 			SweepFinished = True
-			print "Sweep over time... Finishing..."
+			print("Sweep over time... Finishing...")
 		elif (self.Temperature - self.SweepFinish)*self.SweepDirection > 0.0:
 			SweepFinished = True
-			print "Final temperature reached... Finishing..."
+			print("Final temperature reached... Finishing...")
 		else:
 			SweepFinished = False
 
@@ -321,7 +321,7 @@ class TControl():
 		StatusString = "%s = %.2f mK; PID output = %d; " % (self.Sensor,self.Temperature,self.PIDOut)
 		StatusString += "Status message = %d; " % self.StatusMsg
 		StatusString += "P = %.2f, I = %.2f, D = %.2f\n" % (self.pid.P_value,self.pid.I_value,self.pid.D_value)	
-		print StatusString
+		print(StatusString)
 		self.LastStatusTime = datetime.now()
 		return
 
@@ -329,7 +329,7 @@ class TControl():
 		CommandVec = np.zeros((12,))
 		CommandVec[2+Heater*4] = 1
 		CommandStr = "SETUP "
-		print "Heater %d Switched %d" % (Heater,int(not self.TCSHeater[Heater]))
+		print("Heater %d Switched %d" % (Heater,int(not self.TCSHeater[Heater])))
 		for i in CommandVec:
 			CommandStr = "".join((CommandStr, "%d," % i))
 		CommandStr = CommandStr[:-1]
