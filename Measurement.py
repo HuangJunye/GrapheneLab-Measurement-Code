@@ -562,21 +562,21 @@ def DeviceFridge2D(GraphProc, rpg, DataFile,
 		XVec = np.hstack((np.arange(FridgeStart,FridgeStop,FridgeRate),FridgeStop))
 		YStart = DeviceStart
 		YStop = DeviceStop
-				YStep = DeviceStep
+		YStep = DeviceStep
 	else:
 		XVec = np.hstack((np.arange(DeviceStart,DeviceStop,DeviceStep),DeviceStop))
 		YStart = FridgeStart
 		YStop = FridgeStop
-				YStep = FridgeRate
+		YStep = FridgeRate
 
 	if not not(XCustom):
 		XVec = XCustom
 
 		if SweepDevice:
-				YLen = len(MeasurementUtils.GenerateDeviceSweep(DeviceStart,
+			YLen = len(MeasurementUtils.GenerateDeviceSweep(DeviceStart,
 									DeviceStop,DeviceStep,Mid=DeviceMid))
 		else:
-				YLen = abs(YStart-YStop)/YStep+1
+			YLen = abs(YStart-YStop)/YStep+1
 
 	NRead = len(ReadInst) 
 	Plt2DWin = [None]*NRead
@@ -584,16 +584,16 @@ def DeviceFridge2D(GraphProc, rpg, DataFile,
 	Imv = [None]*NRead
 	ZArray = [np.zeros((len(XVec),YLen)) for i in range(NRead)]
 	
-		if SweepDevice:
-			for i in range(NRead):
-				Plt2DWin[i] = rpg.QtGui.QMainWindow()
-				Plt2DWin[i].resize(500,500)
-				VwBox[i] = rpg.ViewBox(invertY = True)
-				Imv[i] = rpg.ImageView(view=rpg.PlotItem(viewBox=VwBox[i]))
-				Plt2DWin[i].setCentralWidget(Imv[i])
-				Plt2DWin[i].setWindowTitle("ReadInst %d" % i)
-				Plt2DWin[i].show()
-				VwBox[i].setAspectLocked(False)
+	if SweepDevice:
+		for i in range(NRead):
+			Plt2DWin[i] = rpg.QtGui.QMainWindow()
+			Plt2DWin[i].resize(500,500)
+			VwBox[i] = rpg.ViewBox(invertY = True)
+			Imv[i] = rpg.ImageView(view=rpg.PlotItem(viewBox=VwBox[i]))
+			Plt2DWin[i].setCentralWidget(Imv[i])
+			Plt2DWin[i].setWindowTitle("ReadInst %d" % i)
+			Plt2DWin[i].show()
+			VwBox[i].setAspectLocked(False)
 
 
 			YScale = YStep
@@ -683,8 +683,8 @@ def DeviceFridge2D(GraphProc, rpg, DataFile,
 #		Ydata = DataList[0]
 				if SweepDevice:
 					for j in range(NRead):
-					ZArray[j][i,:] = DataList[j+1]
-					Imv[j].setImage(ZArray[j],pos=(XVec[0],YStart),scale=(XScale,YScale))
+						ZArray[j][i,:] = DataList[j+1]
+						Imv[j].setImage(ZArray[j],pos=(XVec[0],YStart),scale=(XScale,YScale))
 
 	MClient = SocketUtils.SockClient('localhost', 18861)
 	time.sleep(2)

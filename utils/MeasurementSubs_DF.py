@@ -52,10 +52,8 @@ import shutil
 import asyncore
 import h5py
 
-import VisaSubs as VisaSubs
-import SrsLia as LIA
-import Keithley_2014_v0_4 as keithley
-import SocketUtils as SocketUtils
+import utils.VisaSubs as VisaSubs
+import utils.SocketUtils as SocketUtils
 
 from itertools import cycle
 

@@ -22,7 +22,7 @@ Classes for:
 """
 
 import visa as visa
-import VisaSubs as VisaSubs
+import utils.VisaSubs as VisaSubs
 import string as string
 import re as re
 from collections import namedtuple
