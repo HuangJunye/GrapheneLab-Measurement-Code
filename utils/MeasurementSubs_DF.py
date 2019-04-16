@@ -162,7 +162,7 @@ def OpenCSVFile(FileName,StartTime,ReadInst,
 	csvfile.write("\n")
 	csvfile.write(ColumnString)
 
-	print "Writing to data file %s\n" % File
+	print("Writing to data file %s\n" % File)
 	return FileWriter, File, NetDir
 	
 def GenerateDeviceSweep(Start,Stop,Step,Mid = []):

@@ -20,7 +20,7 @@ import time
 import math
 import numpy as np
 import threading
-import Queue
+import queue
 
 ######################################################
 # Timer class

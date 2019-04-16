@@ -163,7 +163,7 @@ def OpenCSVFile(FileName,StartTime,ReadInst,SweepInst=[],SetInst=[],Comment = "N
 	csvfile.write("\n")
 	csvfile.write(ColumnString)
 
-	print "Writing to data file %s\n" % File
+	print("Writing to data file %s\n" % File)
 	return FileWriter, File, NetDir
 
 	
