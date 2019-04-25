@@ -48,8 +48,7 @@ class TControl():
 		self.PicoVisa.write("HDR0")
 		self.PicoVisa.write("ARN 1")
 		self.PicoVisa.write("REM 1")
-				self.TCSVisa = VisaSubs.InitializeSerial("ASRL6::INSTR",
-						idn="ID?")
+		self.TCSVisa = VisaSubs.InitializeSerial("ASRL6::INSTR",idn="ID?")
 		address = ('localhost',18871)
 		self.Server = SocketUtils.SockServer(address)
 

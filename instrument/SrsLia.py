@@ -42,7 +42,6 @@ ToDo:
 
 """
 
-#import rpyc
 import visa as visa
 import utils.VisaSubs as VisaSubs
 import string as string
@@ -50,13 +49,6 @@ import re as re
 from collections import namedtuple
 import time
 import numpy as np
-
-######################################################
-# At the moment each of the instruments we use is a
-# seperate class
-#####################################################
-
-
 
 class SrsLia:
 	def __init__(self,address):
@@ -80,19 +72,13 @@ class SrsLia:
 		self.AutoRange = False
 		self.SensitivityMax = 1.
 
-	################################################
 	# Read one of the numeric parameters
-	###############################################
-
 	def ReadNumeric(self,command):
 		Reply = self.Visa.ask("".join((command,"?")))
 		Answer = float(Reply)
 		return Answer
 
-	##################################################
-	# Read data (X, Y)
-	################################################
-
+	# Read data (X, Y, R, Phase)
 	def ReadData(self):
 		Reply = self.Visa.ask("SNAP?1,2,3,4")
 		self.Data = [float(i) for i in Reply.split(",")]
@@ -114,11 +100,7 @@ class SrsLia:
 
 		pass
 
-	##################################################
-	# Initialization for the LIA consists of reading the measurement
-	# parameters
-	##################################################
-
+	# Initialization for the LIA consists of reading the measurement parameters
 	def Initialize(self,autorange=False):
 		self.Excitation = self.ReadNumeric("SLVL")
 		self.Frequency = self.ReadNumeric("FREQ")
@@ -159,10 +141,7 @@ class SrsLia:
 		
 		return
 
-	##################################################
 	# Read the offsets
-	##################################################
-
 	def ReadOffset(self,**kwargs):
 		
 		# set the offsets to zero
@@ -190,13 +169,7 @@ class SrsLia:
 
 		pass
 
-
-	###################################################
 	# Print a description string 
-	################################################
-	
-
-
 	def Description(self):
 		DescriptionString = "SrsLia"
 		for item in list(vars(self).items()):
@@ -204,7 +177,6 @@ class SrsLia:
 				DescriptionString = ", ".join((DescriptionString,"%s = %.3f" % item))
 			#elif item[0] == "Expand" or item[0] == "Offset":
 			#	DescriptionString = ", ".join((DescriptionString,"%s = %.3f, %.3f" % item))
-
 
 		DescriptionString = "".join((DescriptionString,"\n"))
 		return DescriptionString
