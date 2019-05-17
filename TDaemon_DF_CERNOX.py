@@ -23,7 +23,7 @@ ToDo:
 	SetTCS
 
 """
-
+from collections import deque
 import utils.SocketUtils as SocketUtils
 import logging
 import visa as visa
@@ -112,14 +112,14 @@ class TControl():
 		Source = Source + 1
 		command = " ".join(("SETDAC","%d" % Source,"0","%d" % Current))
 		
-		self.TCSVisa.ask(command)
+		self.TCSVisa.query(command)
 		return
 
 	def ReadPico(self):
 		# Get the resistance of the current channel of the picowatt
 		self.PicoVisa.write("ADC")
 		time.sleep(0.45)
-		Answer = self.PicoVisa.ask("RES?")
+		Answer = self.PicoVisa.query("RES?")
 		Answer = Answer.strip()
 		try:
 			self.Resistance = float(Answer)
@@ -129,7 +129,7 @@ class TControl():
 		return
 
 	def ReadPicoRange(self):
-		Answer = self.PicoVisa.ask("RAN?")
+		Answer = self.PicoVisa.query("RAN?")
 		Answer = Answer.strip()
 		self.PicoRange = int(Answer)
 		return
@@ -145,7 +145,7 @@ class TControl():
 		return
 
 	def ReadTCS(self):
-		Answer = self.TCSVisa.ask("STATUS?")
+		Answer = self.TCSVisa.query("STATUS?")
 		Reply = Answer.split("\t")[1]
 		Reply = Reply.split(",")
 		Range = Reply[1::4]
@@ -315,7 +315,7 @@ class TControl():
 		for i in CommandVec:
 			CommandStr = "".join((CommandStr, "%d," % i))
 		CommandStr = CommandStr[:-1]
-		reply = self.TCSVisa.ask(CommandStr)
+		reply = self.TCSVisa.query(CommandStr)
 		return
 
 
