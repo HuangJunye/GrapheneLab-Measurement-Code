@@ -39,8 +39,10 @@ from datetime import datetime
 
 class TControl():
 
-	# Initialization call, initialize visas for the TCS, Picowatt and the
-	# Server, server always runs at 18871
+	""" Initialization call, initialize visas for the TCS, Picowatt and the
+	Server, server always runs at 18871
+	"""
+
 	def __init__(self):
 
 		self.PicoVisa = VisaSubs.InitializeGPIB(20,0,
@@ -48,8 +50,8 @@ class TControl():
 		self.PicoVisa.write("HDR0")
 		self.PicoVisa.write("ARN 1")
 		self.PicoVisa.write("REM 1")
-				self.TCSVisa = VisaSubs.InitializeSerial("ASRL6::INSTR",
-						idn="ID?")
+		self.TCSVisa = VisaSubs.InitializeSerial("ASRL6::INSTR",idn="ID?")
+
 		address = ('localhost',18871)
 		self.Server = SocketUtils.SockServer(address)
 
@@ -96,26 +98,9 @@ class TControl():
 		self.Sensor = "CERNOX"
 
 		# Initialize a pid controller
-		# PID Values used:
-		# P=10 (20 T>800) I=0.5
-		# P=200 I=10 (July 2014, for heating up to RT)
-		# P-40 I=5 (May 2014, works better at lower cooling power?)
-		# P=20 I=5 (March 2014)
-		# P=10 I=1 (March 2014) : doesn't set correctly
-		# P=5  I=10 (from earlier file): don't know about performance
-		
-		# For poor base T (>200mK)
 		self.pid = PIDControl.PID(P=20.,I=.5,D=0,Derivator=0,Integrator=0,Integrator_max=60000,Integrator_min=-2000)
 
-		# If the fridge reaches good base T
-		#self.pid = PIDControl.PID(P=5.,I=.25,D=0.1,Derivator=0,Integrator=0,Integrator_max=40000,Integrator_min=-2000)
-		
-		# For high heater power
-		#self.pid = PIDControl.PID(P=10000.,I=10.,D=0,Derivator=0,Integrator=0,Integrator_max=40000,Integrator_min=-2000)
-		#self.PIDOut = 0
-
 		return
-
 
 	def SetTCS(self,Source,Current):
 		if Current < 0:
