@@ -53,7 +53,7 @@ import numpy as np
 class SrsLia:
 	def __init__(self,address):
 		self.Address = address
-		self.Visa = VisaSubs.InitializeGPIB(address,0,term_chars = "\\n")
+		self.Visa = VisaSubs.InitializeGPIB(address,0)
 		# Other LIA properties
 		self.Source = "VOLT"
 		self.Name = "Lock in"
@@ -74,13 +74,13 @@ class SrsLia:
 
 	# Read one of the numeric parameters
 	def ReadNumeric(self,command):
-		Reply = self.Visa.ask("".join((command,"?")))
+		Reply = self.Visa.query("".join((command,"?")))
 		Answer = float(Reply)
 		return Answer
 
 	# Read data (X, Y, R, Phase)
 	def ReadData(self):
-		Reply = self.Visa.ask("SNAP?1,2,3,4")
+		Reply = self.Visa.query("SNAP?1,2,3,4")
 		self.Data = [float(i) for i in Reply.split(",")]
 
 		if self.AutoRange:
@@ -156,7 +156,7 @@ class SrsLia:
 
 		# Read the offsets
 		for i in range(2):
-			Reply = self.Visa.ask("".join(("OEXP? ","%d" % (i+1))))
+			Reply = self.Visa.query("".join(("OEXP? ","%d" % (i+1))))
 			Reply = Reply.split(",")
 			self.Offset[i] = float(Reply[0])
 			self.Expand[i] = float(Reply[1])

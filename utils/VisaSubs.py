@@ -39,7 +39,7 @@ def InitializeGPIB(address, board, QueryID=True, ReadTermination = "LF"
 			tmp = "".join(("GPIBVisa.",kw,"=",kwargs[kw]))
 			exec(tmp)
 		if QueryID:
-			print(GPIBVisa.ask("*IDN?"))
+			print(GPIBVisa.query("*IDN?"))
 	except Exception:
 		print("Failed opening GPIB address %d\n" % address)
 		GPIBVisa = None
@@ -60,7 +60,7 @@ def InitializeSerial(name,idn="*IDN?",ReadTermination="LF", **kwargs):
 		for kw in list(kwargs.keys()):
 			tmp = "".join(("SerialVisa.",kw,"=",kwargs[kw]))
 			exec(tmp)
-		print(SerialVisa.ask(idn))
+		print(SerialVisa.query(idn))
 	except Exception:
 		print("Failed opening serial port %s\n" % name)
 		SerialVisa = None

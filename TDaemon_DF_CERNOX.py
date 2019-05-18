@@ -19,6 +19,7 @@ import numpy as np
 import asyncore
 import time
 from datetime import datetime
+from collections import deque
 
 import utils.SocketUtils as SocketUtils
 import utils.VisaSubs as VisaSubs
@@ -44,16 +45,16 @@ class TControl():
 		self.Resistance = 1.0
 		self.Temperature = 0.0
 		self.DeltaTemp = 1.0
-		
+
 		self.PicoChannel = 0
 		self.PicoRange = 0
-		
+
 		self.SetTemp = -1.0
 
 		self.TCSHeater = [0,0,0]
 		self.TCSRange = [1,1,1]
 		self.TCSCurrent = [0,0,0]
-		
+
 		self.MaxSetTemp = 10000.0
 		self.MaxCurrent = 35000
 
@@ -97,25 +98,25 @@ class TControl():
 		# print Current
 		Source = Source + 1
 		command = " ".join(("SETDAC","%d" % Source,"0","%d" % Current))
-		
-		self.TCSVisa.ask(command)
+
+		self.TCSVisa.query(command)
 		return
 
 	def ReadPico(self):
 		# Get the resistance of the current channel of the picowatt
 		self.PicoVisa.write("ADC")
 		time.sleep(0.45)
-		Answer = self.PicoVisa.ask("RES?")
+		Answer = self.PicoVisa.query("RES?")
 		Answer = Answer.strip()
 		try:
 			self.Resistance = float(Answer)
-		except:			
+		except:
 			self.Resistance = self.Resistance
 			pass
 		return
 
 	def ReadPicoRange(self):
-		Answer = self.PicoVisa.ask("RAN?")
+		Answer = self.PicoVisa.query("RAN?")
 		Answer = Answer.strip()
 		self.PicoRange = int(Answer)
 		return
@@ -131,7 +132,7 @@ class TControl():
 		return
 
 	def ReadTCS(self):
-		Answer = self.TCSVisa.ask("STATUS?")
+		Answer = self.TCSVisa.query("STATUS?")
 		Reply = Answer.split("\t")[1]
 		Reply = Reply.split(",")
 		Range = Reply[1::4]
@@ -174,10 +175,10 @@ class TControl():
 
 	# Interpret a message from the socket, current possible messages are
 	# SET ...  -  set probe the temperature
-	# SWP ...  -  sweep the probe temperature 
+	# SWP ...  -  sweep the probe temperature
 	def ReadMsg(self,Msg):
 		Msg = Msg.split(" ")
-		
+
 		if Msg[0] == "SET":
 			try:
 				NewSet = float(Msg[1])
@@ -223,7 +224,7 @@ class TControl():
 					print("Starting the sweep\n")
 			except:
 				pass
-		
+
 		if Msg[0] == "T_ERROR":
 			try:
 				self.ErrorTemp = float(Msg[1])
@@ -239,7 +240,7 @@ class TControl():
 		return
 
 	def SweepControl(self):
-		
+
 		# We are sweeping so check if the sweep is finished
 		dT = datetime.now() - self.SweepStartTime
 		dTMin = dT.seconds/60.0
@@ -259,7 +260,7 @@ class TControl():
 		else:
 			OldSet = self.SetTemp
 			self.SetTemp = self.SweepStart + self.SweepRateSec * dT.seconds * self.SweepDirection
-			
+
 			if self.PicoChannel == 5:
 				pass
 			#elif (OldSet < 800.) and (self.SetTemp > 800.):
@@ -281,14 +282,14 @@ class TControl():
 			Status = 1 # Ready
 		else:
 			Status = 0 # Not ready
-			
+
 		self.StatusMsg = Status
 		return
 
 	def PrintStatus(self):
 		StatusString = "%s = %.2f K; PID output = %d; " % (self.Sensor,self.Temperature,self.PIDOut)
 		StatusString += "Status message = %d; " % self.StatusMsg
-		StatusString += "P = %.2f, I = %.2f, D = %.2f\n" % (self.pid.P_value,self.pid.I_value,self.pid.D_value)	
+		StatusString += "P = %.2f, I = %.2f, D = %.2f\n" % (self.pid.P_value,self.pid.I_value,self.pid.D_value)
 		print(StatusString)
 		self.LastStatusTime = datetime.now()
 		return
@@ -301,7 +302,7 @@ class TControl():
 		for i in CommandVec:
 			CommandStr = "".join((CommandStr, "%d," % i))
 		CommandStr = CommandStr[:-1]
-		reply = self.TCSVisa.ask(CommandStr)
+		reply = self.TCSVisa.query(CommandStr)
 		return
 
 
@@ -327,13 +328,13 @@ if __name__ == '__main__':
 	control.ReadTCS()
 
 	while True:
-		
+
 		# Read the picowatt and calculate the temperature
 		control.ReadPico()
 		control.CalcTemperature(Calibrations[control.Sensor])
-		control.UpdateAtSet()		
+		control.UpdateAtSet()
 		control.UpdateStatusMsg()
-		
+
 		# Push the reading to clients
 		for j in control.Server.handlers:
 			j.to_send = ",%.3f %d" % (control.Temperature, control.StatusMsg)
@@ -341,7 +342,7 @@ if __name__ == '__main__':
 			if SocketMsg:
 				control.ReadMsg(SocketMsg)
 		asyncore.loop(count=1,timeout=0.001)
-		
+
 		# if we are sweeping we do some things specific to the sweep
 		if control.SweepMode:
 			control.SweepControl()
@@ -350,7 +351,7 @@ if __name__ == '__main__':
 		UpdateTime = datetime.now() - control.LastStatusTime
 		if UpdateTime.seconds/60.0 >= control.StatusInterval:
 			control.PrintStatus()
-	
+
 		NEWPID = control.pid.update(control.Temperature)
 		try:
 			control.PIDOut = int(NEWPID)
@@ -371,7 +372,7 @@ if __name__ == '__main__':
 		elif control.PIDOut <= 0 and control.TCSHeater[2] == 1:
 			# status is go to set and heater is off --> turn it on
 			control.TCSSwitchHeater(2)
-			control.SetTCS(2,0)			
+			control.SetTCS(2,0)
 			control.ReadTCS()
 		elif control.PIDOut >= 0 and control.TCSHeater[2] == 1:
 			control.SetTCS(2,control.PIDOut)
@@ -380,4 +381,3 @@ if __name__ == '__main__':
 		time.sleep(0.5)
 
 	control.TCSVisa.close()
-
