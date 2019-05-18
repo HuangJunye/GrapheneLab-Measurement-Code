@@ -9,36 +9,7 @@ author : Eoin O'Farrell
 email : phyoec@nus.edu.sg
 last edited : July 2013
 
-Explantion:
-
-	There are 3 variables in our instrument:
-	1 Temperature
-	2 Field
-	3 Device parameter; e.g. Backgate V, Topgate V, Current, Angle (one day)
-
-	Typically a measurement will fix two of these and vary the other.
-	The controls for temperature and field are controlled by external
-	services that can be called by the measurement. The measurement
-	invokes a localhost for each of these services and can then
-	access certain methods
-	
-	The generic ports for these are
-	Magnet: 18861
-	Temperature: 18871
-
-	data from these processes can also be accessed through named pipes
-
-	Device parameters are so far controlled in situ in the measurement
-	loop. This should probably also be changed to be consistent
-
 ToDo:
-	
-	InitializeInstruments
-	ScanInstruments
-	InitializeDataFile
-	WriteDataFile
-	CloseDataFile
-	GraphData
 
 """
 
@@ -78,12 +49,12 @@ class LockInAmplifier:
 		return answer
 
 	# Read data (X, Y, R, phase)
-	def ReadData(self):
+	def read_data(self):
 		reply = self.visa.query("SNAP?1,2,3,4")
 		self.data = [float(i) for i in reply.split(",")]
 
 		if self.auto_range:
-			oldRange = self.sensitivity
+			old_range = self.sensitivity
 			if self.data[2] > .9 * self.sensitivity_max:
 				self.sensitivity = self.sensitivity + 3
 				if self.sensitivity > 26:
@@ -93,14 +64,14 @@ class LockInAmplifier:
 				if self.sensitivity < 0:
 					self.sensitivity = 0
 
-			if self.sensitivity != oldRange:
+			if self.sensitivity != old_range:
 				self.visa.write("SENS %d" % self.sensitivity)
-				self.CalcSensMax()
+				self.calc_sens_max()
 
 		pass
 
 	# Initialization for the LIA consists of reading the measurement parameters
-	def Initialize(self,autorange=False):
+	def initialize(self, autorange=False):
 		self.excitation = self.read_numeric("SLVL")
 		self.frequency = self.read_numeric("FREQ")
 		self.harmonic = self.read_numeric("HARM")
@@ -110,38 +81,38 @@ class LockInAmplifier:
 		self.internal_excitation = self.read_numeric("FMOD")
 		self.expand = np.empty(2)
 		self.offset = np.empty(2)
-		self.ReadOffset()
+		self.read_offset()
 		self.auto_range = autorange
-		self.ColumnNames = "X (V), Y (V), R (V), phase (Deg)"
-		self.CalcSensMax()
+		self.column_names = "X (V), Y (V), R (V), phase (Deg)"
+		self.calc_sens_max()
 		pass
 
-	def CalcSensMax(self):
-		RangeVec = [2.,5.,10.]
-		Lev = self.sensitivity/3 - 9
-		self.sensitivity_max = RangeVec[self.sensitivity%3] * 10**Lev
+	def calc_sens_max(self):
+		range_vec = [2., 5., 10.]
+		lev = self.sensitivity/3 - 9
+		self.sensitivity_max = range_vec[self.sensitivity % 3] * 10**lev
 		pass
 
-	def SetOutput(self,Level):
-		self.visa.write("SLVL %.3f" % Level)
+	def set_output(self, level):
+		self.visa.write("SLVL %.3f" % level)
 		pass
 
-	def Ramp(self,VFinish):
-		VStart = self.read_numeric("SLVL")
-		if abs(VStart-VFinish) > 0.002:
-			N = abs((VFinish-VStart)/0.01)
-			VSweep = np.linspace(VStart,VFinish,num=np.ceil(N),endpoint=True)
+	def ramp(self, v_finish):
+		v_start = self.read_numeric("SLVL")
+		if abs(v_start-v_finish) > 0.002:
+			n = abs((v_finish-v_start)/0.01)
+			v_sweep = np.linspace(v_start, v_finish, num=np.ceil(n), endpoint=True)
 
-			for i in range(len(VSweep)):
-				self.SetOutput(VSweep[i])
+			for i in range(len(v_sweep)):
+				self.set_output(v_sweep[i])
 				time.sleep(0.01)
 
-			self.excitation = VFinish
+			self.excitation = v_finish
 		
 		return
 
 	# Read the offsets
-	def ReadOffset(self,**kwargs):
+	def read_offset(self, **kwargs):
 		
 		# set the offsets to zero
 		if "auto" in list(kwargs.keys()):
@@ -155,30 +126,31 @@ class LockInAmplifier:
 
 		# Read the offsets
 		for i in range(2):
-			reply = self.visa.query("".join(("OEXP? ","%d" % (i+1))))
+			reply = self.visa.query("".join(("OEXP? ", "%d" % (i+1))))
 			reply = reply.split(",")
 			self.offset[i] = float(reply[0])
 			self.expand[i] = float(reply[1])
 
 		if "auto" in list(kwargs.keys()):
-			self.visa.write("".join(("OEXP 1,","%.2f," % self.offset[0],"%d" % kwargs["auto"])))
-			self.visa.write("".join(("OEXP 2,","%.2f," % self.offset[1],"%d" % kwargs["auto"])))
+			self.visa.write("".join(("OEXP 1,", "%.2f," % self.offset[0], "%d" % kwargs["auto"])))
+			self.visa.write("".join(("OEXP 2,", "%.2f," % self.offset[1], "%d" % kwargs["auto"])))
 			self.expand[0] = kwargs["auto"]
 			self.expand[1] = kwargs["auto"]
 
 		pass
 
 	# Print a description string 
-	def Description(self):
-		DescriptionString = "SrsLia"
+	def description(self):
+		description_string = "SR830"
 		for item in list(vars(self).items()):
-			if item[0] == "tau" or item[0] == "excitation" or item[0] == "frequency" or item[0] == "harmonic" or item[0] == "address" or item[0] == "phase" or item[0] == "sensitivity" or item[0] == "internal_excitation":
-				DescriptionString = ", ".join((DescriptionString,"%s = %.3f" % item))
-			#elif item[0] == "expand" or item[0] == "offset":
-			#	DescriptionString = ", ".join((DescriptionString,"%s = %.3f, %.3f" % item))
+			if item[0] == "tau" or item[0] == "excitation" or item[0] == "frequency" \
+					or item[0] == "harmonic" or item[0] == "address" or item[0] == "phase" \
+					or item[0] == "sensitivity" or item[0] == "internal_excitation":
 
-		DescriptionString = "".join((DescriptionString,"\n"))
-		return DescriptionString
+				description_string = ", ".join((description_string, "%s = %.3f" % item))
+
+		description_string = "".join((description_string, "\n"))
+		return description_string
 
 
 
