@@ -200,7 +200,7 @@ def do_device_sweep(
 			to_plot = np.empty((num_of_inst+1))
 			to_plot[0] = data_vector[-1, socket_data_number]
 			for j in range(num_of_inst):
-				to_plot[j+1] = data_vector[-1, start_column[j]+read_inst[j].DataColumn]
+				to_plot[j+1] = data_vector[-1, start_column[j]+read_inst[j].data_column]
 	
 			# Pass data to the plots
 			plot_data.extend(to_plot, _callSync="off")
@@ -251,6 +251,7 @@ def do_device_sweep(
 ##################################################
 # sweep T or B
 ###################################################
+
 
 def do_fridge_sweep(
 		graph_proc, rpg, data_file, read_inst,
@@ -431,7 +432,7 @@ def do_fridge_sweep(
 		else:
 			to_plot[0] = data_vector[-1, 1]
 		for j in range(num_of_inst):
-			to_plot[j+1] = data_vector[-1, start_column[j]+read_inst[j].DataColumn]
+			to_plot[j+1] = data_vector[-1, start_column[j]+read_inst[j].data_column]
 	
 		# Pass data to the plots
 		plot_data.extend(to_plot, _callSync="off")
