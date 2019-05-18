@@ -52,8 +52,8 @@ import shutil
 import asyncore
 import h5py
 
-import utils.VisaSubs as VisaSubs
-import utils.SocketUtils as SocketUtils
+import utils.visa_subs as VisaSubs
+import utils.socket_utils as SocketUtils
 
 from itertools import cycle
 
