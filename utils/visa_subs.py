@@ -36,7 +36,7 @@ def initialize_gpib(address, board, query_id=True, read_termination = "LF"
 			gpib_visa.read_termination = "\r\n"
 			gpib_visa.write_termination = "\r\n"
 		for kw in list(kwargs.keys()):
-			tmp = "".join(("GPIBVisa.",kw,"=",kwargs[kw]))
+			tmp = "".join(("gpib_visa.",kw,"=",kwargs[kw]))
 			exec(tmp)
 		if query_id:
 			print(gpib_visa.query("*IDN?"))
@@ -58,7 +58,7 @@ def initialize_serial(name,idn="*IDN?",read_termination="LF", **kwargs):
 		elif read_termination == "CRLF":
 			serial_visa.read_termination = "\r\n"
 		for kw in list(kwargs.keys()):
-			tmp = "".join(("SerialVisa.",kw,"=",kwargs[kw]))
+			tmp = "".join(("serial_visa.",kw,"=",kwargs[kw]))
 			exec(tmp)
 		print(serial_visa.query(idn))
 	except Exception:
