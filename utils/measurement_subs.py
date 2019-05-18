@@ -133,15 +133,15 @@ def open_csv_file(
 	column_string = "B (T), T(mK) "
 	
 	for inst in sweep_inst:
-		csv_file.write("".join(("SWEEP: ", inst.Description())))
+		csv_file.write("".join(("SWEEP: ", inst.description())))
 		column_string = "".join((column_string, ", ", inst.Source))
 
 	for inst in set_inst:
-		csv_file.write("".join(("SET: ", inst.Description())))
+		csv_file.write("".join(("SET: ", inst.description())))
 		column_string = "".join((column_string, ", ", inst.Source))
 
 	for inst in read_inst:
-		csv_file.write("".join(("READ: ", inst.Description())))
+		csv_file.write("".join(("READ: ", inst.description())))
 		column_string = "".join((column_string, ", ", inst.ColumnNames))
 
 	column_string = "".join((column_string, "\n"))
