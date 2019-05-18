@@ -32,30 +32,15 @@ Explantion:
 	loop. This should probably also be changed to be consistent
 
 """
-	
-import visa as visa
-import string as string
-import re as re
+
 import time
-import multiprocessing
-import numpy as np 
-
-import pyqtgraph as pg
-import pyqtgraph.multiprocess as mp
-from pyqtgraph.Qt import QtCore, QtGui
-
-from datetime import datetime
+import numpy as np
 import os
 import csv
-import subprocess
-import shutil
 import asyncore
-import h5py
 
-import utils.visa_subs as VisaSubs
 import utils.socket_utils as SocketUtils
 
-from itertools import cycle
 
 def InitializeSockets():
 	# Bind to the temperature and magnet sockets and try to read them
