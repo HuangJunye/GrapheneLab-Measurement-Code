@@ -14,16 +14,17 @@ last edited : Apr 2019
 	The daemon broadcasts the current temperature
 
 """
-
-import numpy as np
 import asyncore
 import time
-from datetime import datetime
 from collections import deque
+from datetime import datetime
 
+import numpy as np
+
+import utils.pid_control as pid_control
 import utils.socket_utils as socket_utils
 import utils.visa_subs as visa_subs
-import utils.pid_control as pid_control
+
 
 class TControl():
 
