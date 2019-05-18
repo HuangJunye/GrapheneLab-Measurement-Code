@@ -87,8 +87,8 @@ class TControl:
 
 		# Initialize a pid controller
 		self.pid = pid_control.PID(
-			P=20., I=.5, D=0, Derivator=0, Integrator=0,
-			Integrator_max=60000, Integrator_min=-2000)
+			p=20., i=.5, d=0, derivator=0, integrator=0,
+			integrator_max=60000, integrator_min=-2000)
 		self.pid_output = None
 
 		return
@@ -283,7 +283,7 @@ class TControl:
 	def print_status(self):
 		status_string = "%s = %.2f K; PID output = %d; " % (self.sensor, self.temperature, self.pid_output)
 		status_string += "Status message = %d; " % self.status_msg
-		status_string += "P = %.2f, I = %.2f, D = %.2f\n" % (self.pid.P_value, self.pid.I_value, self.pid.D_value)
+		status_string += "P = %.2f, I = %.2f, D = %.2f\n" % (self.pid.p_value, self.pid.i_value, self.pid.d_value)
 		print(status_string)
 		self.last_status_time = datetime.now()
 		return

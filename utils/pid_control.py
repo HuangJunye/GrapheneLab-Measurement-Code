@@ -1,98 +1,84 @@
-# The recipe gives simple implementation of a Discrete
-# Proportional-Integral-Derivative (PID) controller.
-# PID controller gives output value for error between
-# desired reference input and measurement feedback to minimize error value.
-# More information: http://en.wikipedia.org/wiki/PID_controller
-#
-# cnr437@gmail.com
-#
-#######	Example	#########
-#
-# p=PID(3.0,0.4,1.2)
-# p.setPoint(5.0)
-# while True:
-#	 pid = p.update(measurement_value)
-#
-#
-
-
 class PID:
 	"""
 	Discrete PID control
 	"""
 
-	def __init__(self, P=2.0, I=0.0, D=1.0, Derivator=0, Integrator=0, Integrator_max=500, Integrator_min=-500):
+	def __init__(self, p=2.0, i=0.0, d=1.0, derivator=0, integrator=0, integrator_max=500, integrator_min=-500):
 
-		self.Kp=P
-		self.Ki=I
-		self.Kd=D
-		self.Derivator=Derivator
-		self.Integrator=Integrator
-		self.Integrator_max=Integrator_max
-		self.Integrator_min=Integrator_min
+		self.k_p = p
+		self.k_i = i
+		self.k_d = d
+		self.derivator = derivator
+		self.integrator = integrator
+		self.integrator_max = integrator_max
+		self.integrator_min = integrator_min
 
-		self.set_point=0.0
-		self.error=0.0
+		self.p_value = 0
+		self.i_value = 0
+		self.d_value = 0
 
-	def update(self,current_value):
+		self.set_point = 0.0
+		self.error = 0.0
+
+	def update(self, current_value):
 		"""
 		Calculate PID output value for given reference input and feedback
 		"""
 
 		self.error = self.set_point - current_value
 
-		self.P_value = self.Kp * self.error
-		self.D_value = self.Kd * ( self.error - self.Derivator)
-		self.Derivator = self.error
+		self.p_value = self.k_p * self.error
+		self.d_value = self.k_d * ( self.error - self.derivator)
+		self.derivator = self.error
 
-		self.Integrator = self.Integrator + self.error
+		self.integrator = self.integrator + self.error
 
-		if self.Integrator > self.Integrator_max:
-			self.Integrator = self.Integrator_max
-		elif self.Integrator < self.Integrator_min:
-			self.Integrator = self.Integrator_min
+		if self.integrator > self.integrator_max:
+			self.integrator = self.integrator_max
+		elif self.integrator < self.integrator_min:
+			self.integrator = self.integrator_min
 
-		self.I_value = self.Integrator * self.Ki
+		self.i_value = self.integrator * self.k_i
 
-		PID = self.P_value + self.I_value + self.D_value
+		pid_value = self.p_value + self.i_value + self.d_value
 
-		return PID
+		return pid_value
 
-	def setPoint(self,set_point,reset=True):
+	def initialize_set_point(self, set_point, reset=True):
 		"""
 		Initilize the setpoint of PID
 		"""
 		self.set_point = set_point
 		if reset:
-			self.Integrator=0
-			self.Derivator=0
+			self.integrator = 0
+			self.derivator = 0
 		else:
 			pass
 
-	def setIntegrator(self, Integrator):
-		self.Integrator = Integrator
+	def set_integrator(self, integrator):
+		self.integrator = integrator
 
-	def setDerivator(self, Derivator):
-		self.Derivator = Derivator
+	def set_derivator(self, derivator):
+		self.derivator = derivator
 
-	def setKp(self,P):
-		self.Kp=P
+	def set_k_p(self, p):
+		self.k_p = p
 
-	def setKi(self,I):
-		self.Ki=I
+	def set_k_i(self, i):
+		self.k_i = i
 
-	def setKd(self,D):
-		self.Kd=D
+	def set_k_d(self, d):
+		self.k_d = d
 
-	def getPoint(self):
+	def get_point(self):
 		return self.set_point
 
-	def getError(self):
+	def get_error(self):
 		return self.error
 
-	def getIntegrator(self):
-		return self.Integrator
+	def get_integrator(self):
+		return self.integrator
 
-	def getDerivator(self):
-		return self.Derivator
+	def get_derivator(self):
+		return self.derivator
 
