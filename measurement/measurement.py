@@ -41,7 +41,7 @@ from sys import exit
 import numpy as np
 import pyqtgraph as pg
 
-import utils.measurement_subs_dilfridge as measurement_utils
+import utils.measurement_subs as measurement_utils
 import utils.socket_utils as socket_utils
 
 pg.setConfigOption("useWeave", False)
