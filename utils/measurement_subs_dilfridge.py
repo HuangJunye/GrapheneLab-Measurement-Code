@@ -40,145 +40,143 @@ import time
 
 import numpy as np
 
-import utils.socket_utils as SocketUtils
+import utils.socket_utils as socket_utils
 
 
-def InitializeSockets():
+def initialize_sockets():
 	# Bind to the temperature and magnet sockets and try to read them
-	TClient = SocketUtils.SockClient('localhost', 18871)
-	MClient = SocketUtils.SockClient('localhost', 18861)
+	t_client = socket_utils.SockClient('localhost', 18871)
+	m_client = socket_utils.SockClient('localhost', 18861)
 	time.sleep(4)
-	MSocket = [0.0, 0]
-	TSocket = [0.0, 0]
-	TSocket = SocketRead(TClient, TSocket)
-	MSocket = SocketRead(MClient, MSocket)
+	m_socket = [0.0, 0]
+	t_socket = [0.0, 0]
+	m_socket = SocketRead(m_client, m_socket)
+	t_socket = SocketRead(t_client, t_socket)
 	
-	return MClient, MSocket, TClient, TSocket
+	return m_client, m_socket, t_client, t_socket
 
-def SocketRead(Client,OldSocket = []):
+def socket_read(client,old_socket = []):
 	# Read the socket and parse the reply, the reply has 2 parts the message and the status
 	asyncore.loop(count=1,timeout=0.001)
-	SocketString = Client.received_data
-	Socket = OldSocket
-	if SocketString:
-		SocketString = SocketString.split(",")[-1]
-		SocketString = SocketString.split(" ")
-		if len(SocketString)==2:
-			Value = SocketString[:-1]
-			Status = SocketString[-1]
+	socket_string = client.received_data
+	socket = old_socket
+	if socket_string:
+		socket_string = socket_string.split(",")[-1]
+		socket_string = socket_string.split(" ")
+		if len(socket_string)==2:
+			value = socket_string[:-1]
+			status = socket_string[-1]
 			try:
-				for i,v in enumerate(Value):
-					Value[i] = float(v)
-				Status = int(Status)
-				Socket[0] = Value
-				Socket[1] = Status
+				for i,v in enumerate(value):
+					value[i] = float(v)
+				status = int(status)
+				socket[0] = value
+				socket[1] = status
 			except:
 				pass
 
-	return Socket
+	return socket
 
-def SocketWrite(Client,Msg):
-	Client.to_send = Msg
+def socket_write(client,msg):
+	client.to_send = msg
 	asyncore.loop(count=1,timeout=0.001)
 	time.sleep(2)
-	Client.to_send = "-"
+	client.to_send = "-"
 	asyncore.loop(count=1,timeout=0.001)
 
-def OpenCSVFile(FileName,StartTime,ReadInst,
-		SweepInst=[],SetInst=[],Comment = "No comment!\n",
-		NetworkDir = "Z:\\DATA"):
+def open_csv_file(file_name,start_time,read_inst,
+		sweep_inst=[],set_inst=[],comment = "No comment!\n",
+		network_dir = "Z:\\DATA"):
 	
 	# Setup the directories
 	# Try to make a directory called Data in the CWD
-	CurrentDir = os.getcwd()
-	DataDir = "".join((CurrentDir,"\\Data"))
+	current_dir = os.getcwd()
+	data_dir = "".join((current_dir,"\\Data"))
 	try:
-		os.mkdir(DataDir)
+		os.mkdir(data_dir)
 	except OSError:
 		pass
 
 	# Try to make a directory with the current director name in the
 	# network drive
 	
-	NetworkDir = NetworkDir
-	DirName = os.path.basename(CurrentDir)
-	NetDir = "".join((NetworkDir,"\\",DirName))
-	if not os.path.exists(NetDir):
+	network_dir = network_dir
+	dir_name = os.path.basename(current_dir)
+	net_dir = "".join((network_dir,"\\",dir_name))
+	if not os.path.exists(net_dir):
 		try:
-			os.mkdir(NetDir)
+			os.mkdir(net_dir)
 		except OSError:
 			pass
 
 	# Try to make a file called ...-0.dat in data else ...-1.dat etc.
 	i = 0
 	while True:
-		File = "".join((DataDir,"\\",FileName,"-","%d" % i,".dat"))
+		file = "".join((data_dir,"\\",file_name,"-","%d" % i,".dat"))
 		try:
-			os.stat(File)
+			os.stat(file)
 			i = i+1
 			pass
 		except OSError:
-			csvfile = open(File,"w")
-			FileWriter = csv.writer(csvfile,delimiter = ',')
+			csvfile = open(file,"w")
+			file_writer = csv.writer(csvfile,delimiter = ',')
 			break
 
 	
 	# Write the starttime and a description of each of the instruments
-	FileWriter.writerow([StartTime])
+	file_writer.writerow([start_time])
 
-	ColumnString = "B (T), T(mK) "
+	column_string = "B (T), T(mK) "
 	
-	for Inst in SweepInst:
-		csvfile.write("".join(("SWEEP: ",Inst.Description())))
-		ColumnString = "".join((ColumnString,", ",Inst.Source))
+	for inst in sweep_inst:
+		csvfile.write("".join(("SWEEP: ",inst.Description())))
+		column_string = "".join((column_string,", ",inst.Source))
 
-	for Inst in SetInst:
-		csvfile.write("".join(("SET: ",Inst.Description())))
-		ColumnString = "".join((ColumnString,", ",Inst.Source))
+	for inst in set_inst:
+		csvfile.write("".join(("SET: ",inst.Description())))
+		column_string = "".join((column_string,", ",inst.Source))
 
-	for Inst in ReadInst:
-		csvfile.write("".join(("READ: ",Inst.Description())))
-		ColumnString = "".join((ColumnString,", ",Inst.ColumnNames))
+	for inst in read_inst:
+		csvfile.write("".join(("READ: ",inst.Description())))
+		column_string = "".join((column_string,", ",inst.ColumnNames))
 
 
-	ColumnString = "".join((ColumnString,"\n"))
-	csvfile.write(Comment)
+	column_string = "".join((column_string,"\n"))
+	csvfile.write(comment)
 	csvfile.write("\n")
-	csvfile.write(ColumnString)
+	csvfile.write(column_string)
 
-	print("Writing to data file %s\n" % File)
-	return FileWriter, File, NetDir
+	print("Writing to data file %s\n" % file)
+	return file_writer, file, net_dir
 	
-def GenerateDeviceSweep(Start,Stop,Step,Mid = []):
+def generate_device_sweep(start,stop,step,mid = []):
 		#self.Visa.write("".join((":SOUR:",self.Source,":MODE FIX")))
-	Targets = Mid
-	Targets.insert(0,Start)
-	Targets.append(Stop)
+	targets = mid
+	targets.insert(0,start)
+	targets.append(stop)
 
-	Sweep = [Targets[0]]
-	for i in range(1,len(Targets)):
-		Points = int(1+abs(Targets[i]-Targets[i-1])/Step)
-		Sweep = np.hstack([Sweep,np.linspace(Targets[i-1],Targets[i],num = Points)[1:Points]])
-	return Sweep
+	sweep = [targets[0]]
+	for i in range(1,len(targets)):
+		points = int(1+abs(targets[i]-targets[i-1])/step)
+		sweep = np.hstack([sweep,np.linspace(targets[i-1],targets[i],num = points)[1:points]])
+	return sweep
 
-def GenerateDataVector(LFridgeParam, ReadInst, Sample, SweepInst = False, SetValue = []):
+def generate_data_vector(L_fridge_param, read_inst, sample, sweep_inst = False, set_value = []):
 
-	LSet = len(SetValue)
-	if SweepInst:
-		LSweep = 1
+	L_set = len(set_value)
+	if sweep_inst:
+		L_sweep = 1
 	else:
-		LSweep = 0
-	LRead = 0
-	StartColumn = [0] * (len(ReadInst)+1)
-	StartColumn[0] = LFridgeParam + LSweep + LSet
-	for i,v in enumerate(ReadInst):
-		StartColumn[i+1] = StartColumn[i] + len(v.Data)
+		L_sweep = 0
+	L_read = 0
+	start_column = [0] * (len(read_inst)+1)
+	start_column[0] = L_fridge_param + L_sweep + L_set
+	for i,v in enumerate(read_inst):
+		start_column[i+1] = start_column[i] + len(v.data)
 
-	DataVector = np.zeros((Sample,StartColumn[-1]))
+	data_vector = np.zeros((sample,start_column[-1]))
 
-	for i in range(LSet):
-		DataVector[:,i+LFridgeParam+LSweep] = SetValue[i]
+	for i in range(L_set):
+		data_vector[:,i+L_fridge_param+L_sweep] = set_value[i]
 
-	return StartColumn, DataVector
-
-	
+	return start_column, data_vector
