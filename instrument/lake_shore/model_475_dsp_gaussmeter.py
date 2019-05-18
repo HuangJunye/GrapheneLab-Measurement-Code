@@ -5,51 +5,42 @@ import utils.visa_subs as visa_subs
 
 class LakeShore475DSPGaussmeter:
     def __init__(self, address):
-        self.Name = "Lakeshore 475 DSP"
-        self.Address = address
-        self.Visa = VisaSubs.InitializeGPIB(address, 0, term_chars="\\n")
-        # Other 6430 properties
-        self.Output = False
-        self.Source = "Field"
-        self.Data = [0.0]
-        self.Sense = []
-        self.ColumnNames = "(Gauss)"
-        self.DataColumn = 0
-        self.SourceColumn = 1
+        self.name = "Lake Shore 475 DSP"
+        self.address = address
+        self.visa = visa_subs.initialize_gpib(address, 0)
+        self.output = False
+        self.source = "Field"
+        self.data = [0.0]
+        self.sense = []
+        self.column_names = "(Gauss)"
+        self.data_column = 0
+        self.source_column = 1
 
     ######################################
     # Initializate as voltage source
     #######################################
 
-    def InitializeGauss(self):
-        self.Visa.write("UNIT 1")
-        self.Visa.write("CMODE 1")
-        self.Visa.write("CPARAM 15.0, 5.0, 3000.0, 40.0 ")
-        pass
-
-    ###########################################
-    # Set the range and compliance
-    #######################################
-
-    def SetRangeCompliance(self, Range=105, Compliance=105):
-
+    def initialize_gauss(self):
+        self.visa.write("UNIT 1")
+        self.visa.write("CMODE 1")
+        self.visa.write("CPARAM 15.0, 5.0, 3000.0, 40.0 ")
         pass
 
     ##################################################
     # Read data
     ################################################
 
-    def ReadData(self):
-        Reply = self.Visa.ask(":RDGFIELD?")
-        self.Data = [Reply]
+    def read_data(self):
+        reply = self.visa.ask(":RDGFIELD?")
+        self.data = [reply]
         pass
 
     ##################################################
     # Set source
     ##################################################
 
-    def SetOutput(self, Level):
-        self.Visa.write("CSETP %.4e" % Level)
+    def set_output(self, level):
+        self.visa.write("CSETP %.4e" % level)
         time.sleep(4.0)
         pass
 
@@ -57,48 +48,33 @@ class LakeShore475DSPGaussmeter:
     # Switch the output
     ###############################################
 
-    def SwitchOutput(self):
-        self.Output = not self.Output
-        pass
-
-    #################################################
-    # Configure a sweep
-    ###############################################
-
-    def ConfigureSweep(self, Start, Stop, Step, Soak=0):
-
-        pass
-
-    ###################################################
-    # Begin sweep, this doesn't work so well, not recommended
-    #################################################
-
-    def RunConfiguredSweep(self):
+    def switch_ouptput(self):
+        self.output = not self.output
         pass
 
     ###################################################
     # Print a description string
     ################################################
 
-    def Description(self):
-        DescriptionString = "Lake Shore Gaussmeter"
+    def description(self):
+        description_string = "Lake Shore Gaussmeter"
         for item in list(vars(self).items()):
-            if item[0] == "Address":
-                DescriptionString = ", ".join((DescriptionString, "%s = %.3f" % item))
-            elif item[0] == "Source" or item[0] == "Sense" or item[0] == "Compliance":
-                DescriptionString = ", ".join((DescriptionString, "%s = %s" % item))
+            if item[0] == "address":
+                description_string = ", ".join((description_string, "%s = %.3f" % item))
+            elif item[0] == "source" or item[0] == "sense" or item[0] == "Compliance":
+                description_string = ", ".join((description_string, "%s = %s" % item))
 
-        DescriptionString = "".join((DescriptionString, "\n"))
-        return DescriptionString
+        description_string = "".join((description_string, "\n"))
+        return description_string
 
     ############################################
-    ######### Ramp the source to a final value
+    # ramp the source to a final value
     #########################################
 
-    def Ramp(self, VFinish):
-        time1 = float(self.Visa.ask(":RDGFIELD?"))
-        time2 = 4 * abs(VFinish - time1) / 50
-        self.Visa.write("CSETP %.4e" % VFinish)
+    def ramp(self, v_finish):
+        time1 = float(self.visa.ask(":RDGFIELD?"))
+        time2 = 4 * abs(v_finish - time1) / 50
+        self.visa.write("CSETP %.4e" % v_finish)
         print("Ramping to Field Value")
         time.sleep(time2)
 
