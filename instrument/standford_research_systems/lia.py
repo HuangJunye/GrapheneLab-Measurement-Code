@@ -71,7 +71,7 @@ class LockInAmplifier:
 		pass
 
 	# Initialization for the LIA consists of reading the measurement parameters
-	def initialize(self, autorange=False):
+	def initialize(self, auto_range=False):
 		self.excitation = self.read_numeric("SLVL")
 		self.frequency = self.read_numeric("FREQ")
 		self.harmonic = self.read_numeric("HARM")
@@ -82,7 +82,7 @@ class LockInAmplifier:
 		self.expand = np.empty(2)
 		self.offset = np.empty(2)
 		self.read_offset()
-		self.auto_range = autorange
+		self.auto_range = auto_range
 		self.column_names = "X (V), Y (V), R (V), phase (Deg)"
 		self.calc_sens_max()
 		pass
