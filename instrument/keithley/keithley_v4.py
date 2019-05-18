@@ -182,7 +182,7 @@ class K6430:
 	################################################
 
 	def read_data(self):
-		reply = self.visa.query(":READ?")
+		reply = self.visa.ask(":READ?")
 		self.data = [float(i) for i in reply.split(",")[0:2]]
 		pass
 	
@@ -313,8 +313,8 @@ class K2400:
 				self.visa.write(":SENS:CURR:RANG 105e-9")
 			self.visa.write(":SENS:CURR:PROT:LEV %.3e" % self.compliance)
 		else:
-			self.output = bool(int(self.visa.query(":OUTP:STAT?")))
-			self.compliance = float(self.visa.query(":SENS:CURR:PROT:LEV?"))
+			self.output = bool(int(self.visa.ask(":OUTP:STAT?")))
+			self.compliance = float(self.visa.ask(":SENS:CURR:PROT:LEV?"))
 			self.read_data()
 	
 		return
@@ -340,7 +340,7 @@ class K2400:
 	################################################
 
 	def read_data(self):
-		reply = self.visa.query(":READ?")
+		reply = self.visa.ask(":READ?")
 		self.data = [float(i) for i in reply.split(",")[0:2]]
 		pass
 	
@@ -411,7 +411,7 @@ class K6221:
 		# Other 6430 properties
 		# Query the output state
 		self.output = False
-		reply = self.visa.query(":OUTP:STAT?")
+		reply = self.visa.ask(":OUTP:STAT?")
 		reply = int(reply)
 		self.output = bool(reply)
 		if self.output:
@@ -481,7 +481,7 @@ class K6221:
 	################################################
 
 	def read_numeric(self, command):
-		reply = self.visa.query(command)
+		reply = self.visa.ask(command)
 		answer = float(reply)
 		return answer
 
@@ -579,7 +579,7 @@ class K2182a:
 		if a_cal:
 			self.visa.write(":CAL:UNPR:ACAL:INIT")
 			time.sleep(1.0)
-			reply = self.visa.query(":CAL:UNPR:ACAL:TEMP?")
+			reply = self.visa.ask(":CAL:UNPR:ACAL:TEMP?")
 			time.sleep(10.)
 			self.visa.write(":CAL:UNPR:ACAL:DONE")
 
@@ -598,13 +598,13 @@ class K2182a:
 		else:
 			self.visa.write(":SENS:VOLT:DFIL 0")
 
-		self.visa.query(":READ?")
+		self.visa.ask(":READ?")
 
 		self.visa.write(":SENS:VOLT:REF:STAT 0")
 		if relative:
 			self.visa.write(":SENS:VOLT:REF:ACQ")
 			self.visa.write(":SENS:VOLT:REF:STAT 1")
-			reply = self.visa.query(":SENS:VOLT:REF?")
+			reply = self.visa.ask(":SENS:VOLT:REF?")
 			print(reply)
 			self.relative_value = float(reply)
 		
@@ -631,7 +631,7 @@ class K2182a:
 	################################################
 
 	def read_data(self):
-		reply = self.visa.query(":READ?")
+		reply = self.visa.ask(":READ?")
 		self.data = [float(reply)]
 		pass
 	
@@ -681,7 +681,7 @@ class K2002:
 		self.visa.write("*RST")
 		time.sleep(.1)
 		self.visa.write(":SENS:FUNC \'VOLT:DC\'")
-		self.visa.query(":READ?")
+		self.visa.ask(":READ?")
 		# Disable concurrent mode, measure I and V (not R)
 		self.set_sense_range(sense_range=sense_range, auto_range=auto_range)
 
@@ -691,13 +691,13 @@ class K2002:
 		else:
 			self.visa.write(":SENS:VOLT:AVER:STAT 0")
 
-		self.visa.query(":READ?")
+		self.visa.ask(":READ?")
 
 		self.visa.write(":SENS:VOLT:REF:STAT 0")
 		if relative:
 			self.visa.write(":SENS:VOLT:REF:ACQ")
 			self.visa.write(":SENS:VOLT:REF:STAT 1")
-			reply = self.visa.query(":SENS:VOLT:REF?")
+			reply = self.visa.ask(":SENS:VOLT:REF?")
 			print(reply)
 			self.relative_value = float(reply)
 		
@@ -725,7 +725,7 @@ class K2002:
 
 	def read_data(self):
 		self.visa.write(":INIT")
-		reply = self.visa.query(":FETC?")
+		reply = self.visa.ask(":FETC?")
 		self.data = [float(reply)]
 		pass
 	
