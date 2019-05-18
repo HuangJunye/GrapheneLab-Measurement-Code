@@ -55,8 +55,8 @@ import h5py
 from scipy import interpolate
 
 # Import sub routines files
-import utils.SocketUtils as SocketUtils
-import utils.MeasurementSubs_DF as MeasurementUtils
+import utils.socket_utils as SocketUtils
+import utils.measurement_subs_dilfridge as MeasurementUtils
 
 from itertools import cycle
 from sys import exit

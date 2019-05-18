@@ -34,10 +34,10 @@ Changes in Yaxis
 2) Change self.Rate & self.MaxRate to 5.5625 A/min
 """
 
-import utils.SocketUtils as SocketUtils
+import utils.socket_utils as SocketUtils
 import logging
 import visa as visa
-import utils.VisaSubs as VisaSubs
+import utils.visa_subs as VisaSubs
 import string as string
 import re as re
 import time

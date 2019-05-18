@@ -21,9 +21,9 @@ import time
 from datetime import datetime
 from collections import deque
 
-import utils.SocketUtils as SocketUtils
-import utils.VisaSubs as VisaSubs
-import utils.PIDControl as PIDControl
+import utils.socket_utils as socket_utils
+import utils.visa_subs as visa_subs
+import utils.pid_control as pid_control
 
 class TControl():
 
@@ -33,14 +33,14 @@ class TControl():
 
 	def __init__(self):
 
-		self.PicoVisa = VisaSubs.InitializeGPIB(20,0,query_delay="0.04")
+		self.PicoVisa = visa_subs.InitializeGPIB(20,0,query_delay="0.04")
 		self.PicoVisa.write("HDR0")
 		self.PicoVisa.write("ARN 1")
 		self.PicoVisa.write("REM 1")
-		self.TCSVisa = VisaSubs.InitializeSerial("ASRL6::INSTR",idn="ID?")
+		self.TCSVisa = visa_subs.InitializeSerial("ASRL6::INSTR",idn="ID?")
 
 		address = ('localhost',18871)
-		self.Server = SocketUtils.SockServer(address)
+		self.Server = socket_utils.SockServer(address)
 
 		self.Resistance = 1.0
 		self.Temperature = 0.0
@@ -85,7 +85,7 @@ class TControl():
 		self.Sensor = "CERNOX"
 
 		# Initialize a pid controller
-		self.pid = PIDControl.PID(P=20.,I=.5,D=0,Derivator=0,Integrator=0,Integrator_max=60000,Integrator_min=-2000)
+		self.pid = pid_control.PID(P=20.,I=.5,D=0,Derivator=0,Integrator=0,Integrator_max=60000,Integrator_min=-2000)
 
 		return
 

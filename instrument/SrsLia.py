@@ -43,7 +43,7 @@ ToDo:
 """
 
 import visa as visa
-import utils.VisaSubs as VisaSubs
+import utils.visa_subs as VisaSubs
 import string as string
 import re as re
 from collections import namedtuple

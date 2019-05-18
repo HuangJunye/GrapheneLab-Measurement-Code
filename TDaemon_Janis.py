@@ -27,16 +27,16 @@ ToDo:
 
 """
 
-import utils.SocketUtils as SocketUtils
+import utils.socket_utils as SocketUtils
 import logging
 import visa as visa
-import utils.VisaSubs as VisaSubs
+import utils.visa_subs as VisaSubs
 import string as string
 import re as res
 import time
 import numpy as np
 import asyncore
-import utils.PIDControl as PIDControl
+import utils.pid_control as PIDControl
 from scipy import interpolate
 from datetime import datetime
 

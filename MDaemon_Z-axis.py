@@ -31,10 +31,10 @@ Changes in v3
 	
 """
 
-import utils.SocketUtils as SocketUtils
+import utils.socket_utils as SocketUtils
 import logging
 import visa as visa
-import utils.VisaSubs as VisaSubs
+import utils.visa_subs as VisaSubs
 import re as re
 import time
 import numpy as np
