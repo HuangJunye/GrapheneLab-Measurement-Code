@@ -18,12 +18,11 @@ Functions written:
 """
 import visa as visa
 
-# initalize GPIB devices using PyVisa
 
-def initialize_gpib(address, board, query_id=True, read_termination = "LF"
-					, **kwargs):
+def initialize_gpib(address, board, query_id=True, read_termination="LF", **kwargs):
+	""" Initalize GPIB devices using PyVisa """
 	rm = visa.ResourceManager()
-	gpib_name = "GPIB%d::%d::INSTR" % (board,address)
+	gpib_name = "GPIB%d::%d::INSTR" % (board, address)
 	try:
 		gpib_visa = rm.open_resource(gpib_name)
 		if read_termination == "LF":
@@ -36,7 +35,7 @@ def initialize_gpib(address, board, query_id=True, read_termination = "LF"
 			gpib_visa.read_termination = "\r\n"
 			gpib_visa.write_termination = "\r\n"
 		for kw in list(kwargs.keys()):
-			tmp = "".join(("gpib_visa.",kw,"=",kwargs[kw]))
+			tmp = "".join(("gpib_visa.", kw, "=", kwargs[kw]))
 			exec(tmp)
 		if query_id:
 			print(gpib_visa.query("*IDN?"))
@@ -45,9 +44,9 @@ def initialize_gpib(address, board, query_id=True, read_termination = "LF"
 		gpib_visa = None
 	return gpib_visa
 
-# initialize Serial devices using PyVisa
 
-def initialize_serial(name,idn="*IDN?",read_termination="LF", **kwargs):
+def initialize_serial(name, idn="*IDN?", read_termination="LF", **kwargs):
+	""" Initialize Serial devices using PyVisa """
 	rm = visa.ResourceManager()		
 	try:
 		serial_visa = rm.open_resource(name)
@@ -58,7 +57,7 @@ def initialize_serial(name,idn="*IDN?",read_termination="LF", **kwargs):
 		elif read_termination == "CRLF":
 			serial_visa.read_termination = "\r\n"
 		for kw in list(kwargs.keys()):
-			tmp = "".join(("serial_visa.",kw,"=",kwargs[kw]))
+			tmp = "".join(("serial_visa.", kw, "=", kwargs[kw]))
 			exec(tmp)
 		print(serial_visa.query(idn))
 	except Exception:
