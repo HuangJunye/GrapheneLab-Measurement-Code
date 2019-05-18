@@ -134,15 +134,15 @@ def open_csv_file(
 	
 	for inst in sweep_inst:
 		csv_file.write("".join(("SWEEP: ", inst.description())))
-		column_string = "".join((column_string, ", ", inst.Source))
+		column_string = "".join((column_string, ", ", inst.source))
 
 	for inst in set_inst:
 		csv_file.write("".join(("SET: ", inst.description())))
-		column_string = "".join((column_string, ", ", inst.Source))
+		column_string = "".join((column_string, ", ", inst.source))
 
 	for inst in read_inst:
 		csv_file.write("".join(("READ: ", inst.description())))
-		column_string = "".join((column_string, ", ", inst.ColumnNames))
+		column_string = "".join((column_string, ", ", inst.column_names))
 
 	column_string = "".join((column_string, "\n"))
 	csv_file.write(comment)
@@ -154,7 +154,7 @@ def open_csv_file(
 
 
 def generate_device_sweep(start, stop, step, mid=[]):
-	# self.Visa.write("".join((":SOUR:",self.Source,":MODE FIX")))
+	# self.Visa.write("".join((":SOUR:",self.source,":MODE FIX")))
 	targets = mid
 	targets.insert(0, start)
 	targets.append(stop)
