@@ -89,6 +89,7 @@ class TControl:
 		self.pid = pid_control.PID(
 			P=20., I=.5, D=0, Derivator=0, Integrator=0,
 			Integrator_max=60000, Integrator_min=-2000)
+		self.pid_output = None
 
 		return
 
@@ -152,9 +153,9 @@ class TControl:
 		log_resistance = np.log10(self.resistance)-factor
 		r_poly = np.ones((len(calibration),))
 		old_temperature = self.temperature
-		for i in range(1,len(r_poly)):
+		for i in range(1, len(r_poly)):
 			r_poly[i] = log_resistance * r_poly[i-1]
-		self.temperature = np.power(10,(np.sum(np.multiply(r_poly,calibration))))
+		self.temperature = np.power(10, (np.sum(np.multiply(r_poly, calibration))))
 		self.delta_temp = self.temperature - old_temperature
 
 		self.temp_history.pop()
@@ -190,10 +191,6 @@ class TControl:
 					self.set_temp = new_set_temperature
 					if self.pico_channel == 5:
 						pass
-					#elif self.set_temp > 800:
-					#	self.pid.setKp(20.)
-					#else:
-					#	self.pid.setKp(10.)
 					self.pid.initialize_set_point(self.set_temp)
 					# Set at set to be false and write the new set point
 					self.at_set = False
@@ -266,10 +263,6 @@ class TControl:
 
 			if self.pico_channel == 5:
 				pass
-			#elif (old_set_temperature < 800.) and (self.set_temp > 800.):
-			#	self.pid.setKp(20.)
-			#elif (old_set_temperature > 800.) and (self.set_temp < 800.):
-			#	self.pid.setKp(10.)
 			self.pid.initialize_set_point(self.set_temp, reset=False)
 
 		return
@@ -307,13 +300,16 @@ class TControl:
 		return
 
 
-##################### calibrations
-calibrations={"SO703":[7318.782092,-13274.53584,10276.68481,
-	-4398.202411,1123.561007,-171.3095557,14.43456504,-0.518534965],
-		"SO914":[5795.148097375,-11068.032226486,9072.821104899,
-			-4133.466851312,1129.955799406,-185.318021359,16.881907269,-0.658939155],
-		"MATS56":[19.68045382,-20.19660902,10.13318296,-2.742724207,0.385556989,-0.022178276],
-		"CERNOX":[4.62153,-1.17709,-0.222229,-2.3114e-11]}
+# calibration parameters for temperature sensors
+calibrations = {
+	"SO703": [7318.782092, -13274.53584, 10276.68481, -4398.202411, 1123.561007, -171.3095557, 14.43456504, -0.518534965],
+	"SO914": [
+		5795.148097375, -11068.032226486, 9072.821104899, -4133.466851312,
+		1129.955799406, -185.318021359, 16.881907269, -0.658939155
+	],
+	"MATS56": [19.68045382, -20.19660902, 10.13318296, -2.742724207, 0.385556989, -0.022178276],
+	"CERNOX": [4.62153, -1.17709, -0.222229, -2.3114e-11]
+}
 
 
 if __name__ == '__main__':
@@ -322,7 +318,7 @@ if __name__ == '__main__':
 
 	control = TControl()
 
-	control.set_pico_channel(5) #ch5 for CERNOX. Do not use below 1K
+	control.set_pico_channel(5)  # ch5 for CERNOX. Do not use below 1K
 	control.sensor = "CERNOX"
 
 	# Main loop
@@ -342,7 +338,7 @@ if __name__ == '__main__':
 			socket_msg = j.received_data
 			if socket_msg:
 				control.read_msg(socket_msg)
-		asyncore.loop(count=1,timeout=0.001)
+		asyncore.loop(count=1, timeout=0.001)
 
 		# if we are sweeping we do some things specific to the sweep
 		if control.sweep_mode:
@@ -367,16 +363,16 @@ if __name__ == '__main__':
 
 		if control.pid_output > 0 and control.tcs_heater[2] == 0:
 			# status is go to set and heater is off --> turn it on
-			control.set_tcs(2,control.pid_output)
+			control.set_tcs(2, control.pid_output)
 			control.tcs_switch_heater(2)
 			control.read_tcs()
 		elif control.pid_output <= 0 and control.tcs_heater[2] == 1:
 			# status is go to set and heater is off --> turn it on
 			control.tcs_switch_heater(2)
-			control.set_tcs(2,0)
+			control.set_tcs(2, 0)
 			control.read_tcs()
 		elif control.pid_output >= 0 and control.tcs_heater[2] == 1:
-			control.set_tcs(2,control.pid_output)
+			control.set_tcs(2, control.pid_output)
 			control.tcs_current[2] = control.pid_output
 
 		time.sleep(0.5)
