@@ -13,29 +13,16 @@ last edited : Apr 2019
 	The daemon listens for commands to change the control loop or setpoint
 	The daemon broadcasts the current temperature
 
-ToDo:
-	
-	Listen
-	Broadcast
-	Initialize
-	ReadPico
-	CalcPID
-	SetTCS
-
 """
 
-import utils.SocketUtils as SocketUtils
-import logging
-import visa as visa
-import utils.VisaSubs as VisaSubs
-import string as string
-import re as res
-import time
 import numpy as np
 import asyncore
-import utils.PIDControl as PIDControl
-from scipy import interpolate
+import time
 from datetime import datetime
+
+import utils.SocketUtils as SocketUtils
+import utils.VisaSubs as VisaSubs
+import utils.PIDControl as PIDControl
 
 class TControl():
 
@@ -45,8 +32,7 @@ class TControl():
 
 	def __init__(self):
 
-		self.PicoVisa = VisaSubs.InitializeGPIB(20,0,
-									query_delay="0.04")
+		self.PicoVisa = VisaSubs.InitializeGPIB(20,0,query_delay="0.04")
 		self.PicoVisa.write("HDR0")
 		self.PicoVisa.write("ARN 1")
 		self.PicoVisa.write("REM 1")
@@ -333,20 +319,14 @@ if __name__ == '__main__':
 	# Initialize a PID controller
 
 	control = TControl()
-	
-	#control.SetPicoChannel(3) #ch3 for SO703
-	#control.Sensor = "SO703"
-	#control.SetPicoChannel(4) #ch4 for MATS56
-	#control.Sensor = "MATS56"
+
 	control.SetPicoChannel(5) #ch5 for CERNOX. Do not use below 1K
 	control.Sensor = "CERNOX"
 
 	# Main loop
 	control.ReadTCS()
 
-	#print control.pid.Ki
-
-	while 1:
+	while True:
 		
 		# Read the picowatt and calculate the temperature
 		control.ReadPico()
@@ -365,7 +345,6 @@ if __name__ == '__main__':
 		# if we are sweeping we do some things specific to the sweep
 		if control.SweepMode:
 			control.SweepControl()
-			#control.pid.setPoint(control.SetTemp)
 
 		# check if we should send an update
 		UpdateTime = datetime.now() - control.LastStatusTime
