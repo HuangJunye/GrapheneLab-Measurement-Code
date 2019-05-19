@@ -1,19 +1,17 @@
 import time
 
-import numpy as np
-
-import utils.visa_subs as visa_subs
+from ..generic_instrument import Instrument
 
 
-class K6430:
-    def __init__(self, address):
-        self.name = "Keithley 6430"
-        self.address = address
-        self.visa = visa_subs.initialize_gpib(address, 0)
+class Keithley(Instrument):
+    """ Implement a generic keitheley sourcemeter for k6430, k2400 and k2002
+    Based on generic Instrument class, add the following methods:
 
-    ######################################
-    # Initialize as voltage source
-    #######################################
+    initialize_voltage
+    initialize_current
+    set_range_compliance
+
+    """
 
     def initialize_voltage(
             self, compliance=105e-9, median=0, repetition=1, moving=1,
@@ -80,10 +78,6 @@ class K6430:
 
         pass
 
-    ######################################
-    # Initialize as current source
-    #######################################
-
     def initialize_current(
             self, compliance=1.0,
             median=0, repetition=1,
@@ -139,10 +133,6 @@ class K6430:
 
         pass
 
-    ###########################################
-    # Set the range and compliance
-    #######################################
-
     def set_range_compliance(self, sense_range=105, compliance=105):
 
         self.compliance = compliance
@@ -154,91 +144,3 @@ class K6430:
             self.visa.write("".join((":SENS:", self.sense, ":RANG:AUTO 1")))
 
         pass
-
-    ##################################################
-    # Read data
-    ################################################
-
-    def read_data(self):
-        reply = self.visa.query(":READ?")
-        self.data = [float(i) for i in reply.split(",")[0:2]]
-        pass
-
-    ##################################################
-    # Set source
-    ##################################################
-
-    def set_output(self, level):
-        self.visa.write("".join((":SOUR:", self.source, " %.4e" % level)))
-        pass
-
-    #################################################
-    # Switch the output
-    ###############################################
-
-    def switch_output(self):
-        self.output = not self.output
-        self.visa.write("".join((":OUTP:STAT ", "%d" % self.output)))
-        pass
-
-    #################################################
-    # Configure a sweep
-    ###############################################
-
-    def configure_sweep(self, start, stop, step, soak=0):
-        self.visa.write("".join((":SOUR:", self.source, ":START %.4e" % start)))
-        self.visa.write("".join((":SOUR:", self.source, ":STOP %.4e" % stop)))
-        self.visa.write("".join((":SOUR:", self.source, ":STEP %.4e" % step)))
-        count = int(1 + abs(stop - start) / step)
-        self.visa.write(":SOUR:SOAK %.4e" % soak)
-        self.visa.write("TRIG:COUN %d" % count)
-        pass
-
-    ###################################################
-    # Begin sweep, this doesn't work so well, not recommended
-    #################################################
-
-    def run_configured_sweep(self):
-        self.visa.write(":SOUR:VOLT:MODE SWE")
-        self.visa.write(":SOUR:SWE:SPAC LIN")
-        self.visa.write(":SOUR:SWE:RANG AUTO")
-        self.visa.write(":SOUR:DEL %0.4e" % self.delay)
-        self.switch_output()
-        pass
-
-    ###################################################
-    # Print a description string
-    ################################################
-
-    def description(self):
-        description_string = "Keithley6430"
-        for item in list(vars(self).items()):
-            if item[0] == "address":
-                description_string = ", ".join((description_string, "%s = %.3f" % item))
-            elif item[0] == "source" or item[0] == "sense" or item[0] == "compliance":
-                description_string = ", ".join((description_string, "%s = %s" % item))
-
-        description_string = "".join((description_string, "\n"))
-        return description_string
-
-    ############################################
-    # ramp the source to a final value
-    #########################################
-
-    def ramp(self, v_finish):
-        if self.output:
-            self.read_data()
-        v_start = self.data[self.source_column]
-        if abs(v_start - v_finish) > self.ramp_step:
-            n = abs((v_finish - v_start) / self.ramp_step)
-            v_sweep = np.linspace(v_start, v_finish, num=np.ceil(n), endpoint=True)
-
-            if not self.output:
-                self.switch_output()
-
-            for i in range(len(v_sweep)):
-                self.set_output(v_sweep[i])
-                time.sleep(0.01)
-
-            self.read_data()
-        return
