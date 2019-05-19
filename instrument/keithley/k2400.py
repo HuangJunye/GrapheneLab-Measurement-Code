@@ -18,7 +18,8 @@ class K2400:
     def initialize_voltage(
             self, compliance=105e-9,
             ramp_step=0.1, auto_range=False,
-            reset=True, source_range=21):
+            reset=True, source_range=21
+    ):
 
         self.source = "VOLT"
         self.ramp_step = ramp_step

@@ -1,18 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-"""
-
-Sub programs for doing the measurements
-
-author : Eoin O'Farrell
-email : phyoec@nus.edu.sg
-last edited : July 2013
-
-ToDo:
-
-"""
-
 import time
 
 import numpy as np
@@ -21,6 +9,8 @@ import utils.visa_subs as visa_subs
 
 
 class LockInAmplifier:
+	""" Implement a generic lock-in amplifier class	"""
+
 	def __init__(self, address):
 		self.address = address
 		self.visa = visa_subs.initialize_gpib(address, 0)

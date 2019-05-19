@@ -3,7 +3,7 @@ import time
 import utils.visa_subs as visa_subs
 
 
-class LakeShore475DSPGaussmeter:
+class LS475Gaussmeter:
     def __init__(self, address):
         self.name = "Lake Shore 475 DSP"
         self.address = address

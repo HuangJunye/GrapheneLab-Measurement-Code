@@ -1,10 +1,11 @@
-from . import lock-in_amplifier
+from .lock_in_amplifier import LockInAmplifier
+
 
 class SR830(LockInAmplifier):
 
     # Print a description string
     def description(self):
-        description_string = "SR830"
+        description_string = "SR850"
         for item in list(vars(self).items()):
             if item[0] == "tau" or item[0] == "excitation" or item[0] == "frequency" \
                     or item[0] == "harmonic" or item[0] == "address" or item[0] == "phase" \
