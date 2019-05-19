@@ -3,13 +3,13 @@ import time
 import numpy as np
 
 import utils.visa_subs as visa_subs
+from .k_meter import Keithley
 
 
-class K2400:
+class K2400(Keithley):
     def __init__(self, address):
+        super().__init__(address)
         self.name = "Keithley 2400"
-        self.address = address
-        self.visa = visa_subs.initialize_gpib(address, 0)
 
     ######################################
     # Initializate as voltage source
@@ -59,52 +59,6 @@ class K2400:
 
         return
 
-    ###########################################
-    # Set the range and compliance
-    #######################################
-
-    def set_range_compliance(self, sense_range=105e-9, compliance=105e-9):
-
-        self.compliance = compliance
-        self.visa.write("".join((":SENS:", self.sense, ":PROT:LEV %.3e" % self.compliance)))
-
-        if sense_range:
-            self.visa.write("".join((":SENS:", self.sense, ":RANG ", "%.3e" % sense_range)))
-        else:
-            self.visa.write("".join((":SENS:", self.sense, ":RANG:AUTO 1")))
-
-        pass
-
-    ##################################################
-    # Read data
-    ################################################
-
-    def read_data(self):
-        reply = self.visa.query(":READ?")
-        self.data = [float(i) for i in reply.split(",")[0:2]]
-        pass
-
-    ##################################################
-    # Set source
-    ##################################################
-
-    def set_output(self, level):
-        self.visa.write("".join((":SOUR:", self.source, " %.4e" % level)))
-        pass
-
-    #################################################
-    # Switch the output
-    ###############################################
-
-    def switch_output(self):
-        self.output = not self.output
-        self.visa.write("".join((":OUTP:STAT ", "%d" % self.output)))
-        pass
-
-    ###################################################
-    # Print a description string
-    ################################################
-
     def description(self):
         description_string = "Keithley2400"
         for item in list(vars(self).items()):
@@ -115,26 +69,3 @@ class K2400:
 
         description_string = "".join((description_string, "\n"))
         return description_string
-
-    ############################################
-    # ramp the source to a final value
-    #########################################
-
-    def ramp(self, v_finish):
-        if self.output:
-            self.read_data()
-        v_start = self.data[0]
-        if abs(v_start - v_finish) > self.ramp_step:
-            n = abs((v_finish - v_start) / self.ramp_step)
-            v_sweep = np.linspace(v_start, v_finish, num=np.ceil(n), endpoint=True)
-
-            if not self.output:
-                self.switch_output()
-
-            for i in range(len(v_sweep)):
-                self.set_output(v_sweep[i])
-                time.sleep(0.01)
-
-            self.read_data()
-
-        return

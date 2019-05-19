@@ -12,71 +12,52 @@ class Keithley(Instrument):
     set_range_compliance
 
     """
+    def __init__(self, address):
+        super().__init__(address)
 
     def initialize_voltage(
-            self, compliance=105e-9, median=0, repetition=1, moving=1,
-            integration=1, delay=0.0, trigger=0, ramp_step=0.1, sense_range=105e-9,
-            auto_range=False, auto_filter=False, auto_delay=False
+            self, compliance=105e-9,
+            ramp_step=0.1, auto_range=False,
+            reset=True, source_range=21
     ):
 
+        self.source = "VOLT"
+        self.ramp_step = ramp_step
         self.column_names = "V (V), I (A)"
-        self.data = [0.0, 0.0]
         self.data_column = 1
-        self.source_column = 0
         self.source = "VOLT"
         self.sense = "CURR"
-        self.moving = moving
-        # Special variables for 6430
-        self.median = median
-        self.repetition = repetition
-        self.integration = integration
-        self.delay = delay
-        self.compliance = compliance
-        self.ramp_step = ramp_step
-        self.sense_range = sense_range
-        self.output = False
-        self.visa.write(":OUTP 0")
-        self.trigger = trigger
+        self.data = [0.0, 0.0]
 
-        # A bunch of commands to configure the 6430
-        self.visa.write("*RST")
-        time.sleep(.1)
-        self.visa.write(":SOUR:FUNC:MODE VOLT")
-        # Configure the auto zero (reference)
-        self.visa.write(":SYST:AZER:STAT ON")
-        self.visa.write(":SYST:AZER:CACH:STAT 1")
-        self.visa.write(":SYST:AZER:CACH:RES")
-
-        # Disable concurrent mode, measure I and V (not R)
-        self.visa.write(":SENS:FUNC:CONC 1")
-
-        self.visa.write(":SENS:FUNC:ON \"VOLT\",\"CURR\"")
-        self.visa.write(":FORM:ELEM VOLT,CURR")
-
-        self.visa.write(":SENS:CURR:PROT:LEV %.3e" % self.compliance)
-        if auto_range:
-            self.visa.write(":SENS:CURR:RANG:AUTO 1")
+        if reset:
+            self.compliance = compliance
+            self.output = False
+            self.visa.write(":OUTP 0")
+            # A bunch of commands to configure the 6430
+            self.visa.write("*RST")
+            self.visa.write(":SYST:BEEP:STAT 0")
+            time.sleep(.1)
+            self.visa.write(":SOUR:FUNC:MODE VOLT")
+            self.visa.write(":SOUR:VOLT:RANG %d" % source_range)
+            # Configure the auto zero (reference)
+            self.visa.write(":SYST:AZER:STAT ON")
+            self.visa.write(":SYST:AZER:CACH:STAT 1")
+            self.visa.write(":SYST:AZER:CACH:RES")
+            # Disable concurrent mode, measure I and V (not R)
+            self.visa.write(":SENS:FUNC:CONC 1")
+            self.visa.write(":SENS:FUNC:ON \"VOLT\",\"CURR\"")
+            self.visa.write(":FORM:ELEM VOLT,CURR")
+            if auto_range:
+                self.visa.write(":SENS:CURR:RANG:AUTO 0")
+            else:
+                self.visa.write(":SENS:CURR:RANG 105e-9")
+            self.visa.write(":SENS:CURR:PROT:LEV %.3e" % self.compliance)
         else:
-            self.visa.write(":SENS:CURR:RANG %.2e" % self.sense_range)
+            self.output = bool(int(self.visa.query(":OUTP:STAT?")))
+            self.compliance = float(self.visa.query(":SENS:CURR:PROT:LEV?"))
+            self.read_data()
 
-        # Set some filters
-
-        if auto_filter:
-            self.visa.write(":SENS:AVER:AUTO ON")
-        else:
-            self.visa.write(":SENS:CURR:NPLC %.2f" % self.integration)
-            self.visa.write(":SENS:AVER:REP:COUN %d" % self.repetition)
-            self.visa.write(":SENS:AVER:COUN %d" % self.moving)
-            self.visa.write(":SENS:MED:RANK %d" % self.median)
-
-        if auto_delay:
-            self.visa.write(":SOUR:DEL:AUTO ON")
-        else:
-            self.visa.write(":SOUR:DEL %.4f" % self.delay)
-
-        self.visa.write(":TRIG:DEL %.4f" % self.trigger)
-
-        pass
+        return
 
     def initialize_current(
             self, compliance=1.0,

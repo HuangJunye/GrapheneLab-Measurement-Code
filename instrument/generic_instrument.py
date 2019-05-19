@@ -28,18 +28,18 @@ class Instrument:
         self.source_column = 0
         self.source = "VOLT"
         self.sense = "CURR"
-        self.moving = moving
+        self.moving = 0
         # Special variables for 6430
-        self.median = median
-        self.repetition = repetition
-        self.integration = integration
-        self.delay = delay
-        self.compliance = compliance
-        self.ramp_step = ramp_step
-        self.sense_range = sense_range
+        self.median = 0
+        self.repetition = 0
+        self.integration = 0
+        self.delay = 0
+        self.compliance = 0
+        self.ramp_step = 0
+        self.sense_range = 0
         self.output = False
         self.visa.write(":OUTP 0")
-        self.trigger = trigger
+        self.trigger = 0
 
     def description(self):
         description_string = self.name
