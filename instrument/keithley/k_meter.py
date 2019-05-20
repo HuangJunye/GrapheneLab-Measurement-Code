@@ -33,16 +33,17 @@ class Keithley(Instrument):
             self.compliance = compliance
             self.output = False
             self.visa.write(":OUTP 0")
-            # A bunch of commands to configure the 6430
             self.visa.write("*RST")
             self.visa.write(":SYST:BEEP:STAT 0")
             time.sleep(.1)
             self.visa.write(":SOUR:FUNC:MODE VOLT")
             self.visa.write(":SOUR:VOLT:RANG %d" % source_range)
+
             # Configure the auto zero (reference)
             self.visa.write(":SYST:AZER:STAT ON")
             self.visa.write(":SYST:AZER:CACH:STAT 1")
             self.visa.write(":SYST:AZER:CACH:RES")
+
             # Disable concurrent mode, measure I and V (not R)
             self.visa.write(":SENS:FUNC:CONC 1")
             self.visa.write(":SENS:FUNC:ON \"VOLT\",\"CURR\"")
@@ -125,3 +126,21 @@ class Keithley(Instrument):
             self.visa.write("".join((":SENS:", self.sense, ":RANG:AUTO 1")))
 
         pass
+
+    def ramp(self, v_finish):
+        if self.output:
+            self.read_data()
+        v_start = self.data[self.source_column]
+        if abs(v_start - v_finish) > self.ramp_step:
+            n = abs((v_finish - v_start) / self.ramp_step)
+            v_sweep = np.linspace(v_start, v_finish, num=np.ceil(n), endpoint=True)
+
+            if not self.output:
+                self.switch_output()
+
+            for i in range(len(v_sweep)):
+                self.set_output(v_sweep[i])
+                time.sleep(0.01)
+
+            self.read_data()
+        return

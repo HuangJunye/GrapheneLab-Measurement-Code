@@ -8,13 +8,10 @@ import utils.visa_subs as visa_subs
 class Instrument:
     """ Implement a generic instrument which does the following:
 
-    initialize
+    description
     read_data
     set_output
     switch_output
-    description
-    ramp
-
     """
 
     def __init__(self, address):
@@ -22,24 +19,16 @@ class Instrument:
         self.address = address
         self.visa = visa_subs.initialize_gpib(address, 0)
 
-        self.column_names = "V (V), I (A)"
+        self.column_names = ""
         self.data = [0.0, 0.0]
         self.data_column = 1
         self.source_column = 0
-        self.source = "VOLT"
-        self.sense = "CURR"
-        self.moving = 0
-        # Special variables for 6430
-        self.median = 0
-        self.repetition = 0
-        self.integration = 0
-        self.delay = 0
+        self.source = ""
+        self.sense = ""
         self.compliance = 0
         self.ramp_step = 0
         self.sense_range = 0
         self.output = False
-        self.visa.write(":OUTP 0")
-        self.trigger = 0
 
     def description(self):
         description_string = self.name
@@ -66,20 +55,3 @@ class Instrument:
         self.visa.write("".join((":OUTP:STAT ", "%d" % self.output)))
         pass
 
-    def ramp(self, v_finish):
-        if self.output:
-            self.read_data()
-        v_start = self.data[self.source_column]
-        if abs(v_start - v_finish) > self.ramp_step:
-            n = abs((v_finish - v_start) / self.ramp_step)
-            v_sweep = np.linspace(v_start, v_finish, num=np.ceil(n), endpoint=True)
-
-            if not self.output:
-                self.switch_output()
-
-            for i in range(len(v_sweep)):
-                self.set_output(v_sweep[i])
-                time.sleep(0.01)
-
-            self.read_data()
-        return
