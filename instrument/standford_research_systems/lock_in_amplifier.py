@@ -6,7 +6,7 @@ from ..generic_instrument import Instrument
 
 
 class LockInAmplifier(Instrument):
-	""" Implement a generic lock-in amplifier class	"""
+	"""Implement a generic lock-in amplifier class"""
 
 	def __init__(self, address):
 		super().__init__(address)
@@ -25,6 +25,7 @@ class LockInAmplifier(Instrument):
 		self.offset = 0
 		self.ramp_step = 0.01
 
+		self.column_names = "X (V),Y (V),R (V),phase (Deg)"
 		self.data = [0.0, 0.0, 0.0, 0.0]
 		self.data_column = 0
 
@@ -32,7 +33,7 @@ class LockInAmplifier(Instrument):
 		self.auto_range = False
 
 	def description(self):
-		""" Print a description string to data file"""
+		"""Print a description string to data file"""
 
 		description_string = (
 			f"{super().description()}, "
@@ -59,12 +60,11 @@ class LockInAmplifier(Instrument):
 		self.offset = np.empty(2)
 		self.read_offset()
 		self.auto_range = auto_range
-		self.column_names = "X (V),Y (V),R (V),phase (Deg)"
 		self.calc_sens_max()
 		pass
 
 	def read_numeric(self, command):
-		""" Read one of the numeric parameters"""
+		"""Read one of the numeric parameters"""
 
 		reply = self.visa.query("".join((command, "?")))
 		answer = float(reply)
@@ -107,7 +107,7 @@ class LockInAmplifier(Instrument):
 		pass
 
 	def ramp(self, finish_value):
-		""" A method to ramp the instrument """
+		"""A method to ramp the instrument"""
 		start_value = self.read_numeric("SLVL")
 		if abs(start_value - finish_value) > self.ramp_step:
 			step_num = abs((finish_value - start_value) / self.ramp_step)

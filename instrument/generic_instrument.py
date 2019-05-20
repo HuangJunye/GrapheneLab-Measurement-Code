@@ -2,7 +2,7 @@ import utils.visa_subs as visa_subs
 
 
 class Instrument:
-    """ Implement a generic instrument which does the following:
+    """Implement a generic instrument which does the following:
 
     description
     """

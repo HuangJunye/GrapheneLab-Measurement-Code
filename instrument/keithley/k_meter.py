@@ -6,7 +6,7 @@ from ..generic_instrument import Instrument
 
 
 class Keithley(Instrument):
-    """ Implement a generic keitheley sourcemeter for k6430, k2400 and k2002
+    """Implement a generic keitheley sourcemeter for k6430, k2400 and k2002
     Based on generic Instrument class, add the following methods:
 
     initialize
@@ -116,7 +116,7 @@ class Keithley(Instrument):
         pass
 
     def ramp(self, finish_value):
-        """ A method to ramp the instrument"""
+        """A method to ramp the instrument"""
         if self.output:
             self.read_data()
         start_value = self.data[self.source_column]
