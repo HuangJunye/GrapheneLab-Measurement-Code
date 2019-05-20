@@ -1,7 +1,3 @@
-import time
-
-import numpy as np
-
 import utils.visa_subs as visa_subs
 
 
@@ -27,6 +23,7 @@ class Instrument:
         self.sense = ""
         self.compliance = 0
         self.ramp_step = 0
+        self.source_range = 0
         self.sense_range = 0
         self.output = False
 
@@ -47,11 +44,11 @@ class Instrument:
         pass
 
     def set_output(self, level):
-        self.visa.write("".join((":SOUR:", self.source, " %.4e" % level)))
+        self.visa.write(f":SOUR:{self.source} {level:.4e}")
         pass
 
     def switch_output(self):
         self.output = not self.output
-        self.visa.write("".join((":OUTP:STAT ", "%d" % self.output)))
+        self.visa.write(f":OUTP:STAT {self.output}")
         pass
 
