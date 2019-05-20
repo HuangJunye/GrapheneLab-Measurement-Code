@@ -146,6 +146,3 @@ class LockInAmplifier(Instrument):
 			self.expand[1] = kwargs["auto"]
 
 		pass
-
-
-
