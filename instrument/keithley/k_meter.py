@@ -16,28 +16,30 @@ class Keithley(Instrument):
         super().__init__(address)
 
     def initialize_voltage(
-            self, compliance=105e-9,
-            ramp_step=0.1, auto_range=False,
-            reset=True, source_range=21
+            self, source_range=21, sense_range=105e-9, compliance=105e-9,
+            ramp_step=0.1, auto_sense_range=False, reset=True
     ):
 
         self.source = "VOLT"
-        self.ramp_step = ramp_step
-        self.column_names = "V (V), I (A)"
-        self.data_column = 1
-        self.source = "VOLT"
         self.sense = "CURR"
+        self.ramp_step = ramp_step
+        self.column_names = "V (V),I (A)"
+        self.data_column = 1
         self.data = [0.0, 0.0]
 
         if reset:
-            self.compliance = compliance
             self.output = False
             self.visa.write(":OUTP 0")
             self.visa.write("*RST")
             self.visa.write(":SYST:BEEP:STAT 0")
             time.sleep(.1)
+
             self.visa.write(":SOUR:FUNC:MODE VOLT")
             self.visa.write(":SOUR:VOLT:RANG %d" % source_range)
+            self.visa.write("".join((":SENS:", self.sense, ":RANG ", "%.2e" % self.sense_range)))
+            self.visa.write(f":SENS:{}")
+            self.compliance = compliance
+            self.visa.write("".join((":SENS:", self.sense, ":PROT:LEV %.3e" % self.compliance)))
 
             # Configure the auto zero (reference)
             self.visa.write(":SYST:AZER:STAT ON")
@@ -48,7 +50,8 @@ class Keithley(Instrument):
             self.visa.write(":SENS:FUNC:CONC 1")
             self.visa.write(":SENS:FUNC:ON \"VOLT\",\"CURR\"")
             self.visa.write(":FORM:ELEM VOLT,CURR")
-            if auto_range:
+
+            if auto_sense_range:
                 self.visa.write(":SENS:CURR:RANG:AUTO 0")
             else:
                 self.visa.write(":SENS:CURR:RANG 105e-9")
@@ -64,7 +67,7 @@ class Keithley(Instrument):
             self, compliance=1.0,
             median=0, repetition=1,
             integration=1, delay=0.0, trigger=0,
-            ramp_step=0.1, sense_range=1.0, auto_range=False
+            ramp_step=0.1, sense_range=1.0, auto_sense_range=False
     ):
 
         self.column_names = "V (V), I (A)"
@@ -100,7 +103,7 @@ class Keithley(Instrument):
 
         self.visa.write(":SENS:VOLT:PROT:LEV %.3e" % self.compliance)
 
-        if auto_range:
+        if auto_sense_range:
             self.visa.write(":SENS:VOLT:RANG:AUTO 1")
         else:
             self.visa.write(":SENS:VOLT:RANG %.2e" % self.sense_range)
