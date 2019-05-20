@@ -1,415 +1,365 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-
-"""
-
-Sub programs for operation of Oxford Mercury iPS
-
-original author : Eoin O'Farrell
-current author : Huang Junye
-last edited : Apr 2019
-
-
-	The daemon listens for commands to change the field etc
-	The daemon broadcasts the Field and a status message
-	The daemon is assigned to port 18861
-	The status messages are as follows:
-	0 = Not ready
-	1 = Ready
-
-	The definition of ready is that the magnet daemon has completed the most recent task from the socket and can accept new tasks.
-
-	The daemon always processes the most recent task from the socket, i.e., a new task overwrites previous tasks.
-
-Changes in v2
-
-1) Higher magnetic field resolution. Line 321 & 326
-2) Replace visa.ask to visa.query. ask is depreciated and will be removed in PyVisa 1.10
-
-Changes in v3
-1) Add timeout to 200s
-	
-"""
-
-import utils.socket_utils as SocketUtils
-import logging
-import visa as visa
-import utils.visa_subs as VisaSubs
+import asyncore
 import re as re
 import time
-import numpy as np
-import asyncore
 from datetime import datetime
 
-class MControl():
+import numpy as np
 
-	# Initialization call, initialize visas for the Mercury IPS and perform some startup
-	# queries on the instrument
-	# Server, server always runs at 18861
-	# Important parameters
-	# Field
-	# Heater
-	# AToB (amps to tesla)
-	# Lock - Lock the deamon from performing actions, typically if the heater has just been
-	# switched
-	# The target current either as part of a sweep or going to a fixed value
-	# Mode: Sweep or Set (including set to zero)
+import utils.socket_utils as socket_utils
+import utils.visa_subs as visa_subs
+
+
+class MControl:
+	"""
+	Initialization call, initialize visas for the Mercury IPS and perform some startup
+	queries on the instrument
+	server, server always runs at 18861
+	Important parameters
+	field
+	heater
+	a_to_b (amps to tesla)
+	lock - lock the deamon from performing actions, typically if the heater has just been
+	switched
+	The target current either as part of a sweep or going to a fixed value
+	Mode: Sweep or Set (including set to zero)
+	TODO: modify codes to allow X, Y Z axes
+	"""
 	
 	def __init__(self):
 		# Connect visa to the magnet
-		self.Visa = VisaSubs.InitializeSerial("ASRL11::INSTR")
+		self.visa = visa_subs.initialize_serial("ASRL11::INSTR")
 		# Add Timeout to 200s
-		self.Visa.timeout=200000
+		self.visa.timeout = 200000
 		# Open the socket
-		address = ('localhost',18861)
-		self.Server = SocketUtils.SockServer(address)
+		address = ('localhost', 18861)
+		self.server = socket_utils.SockServer(address)
 		
 		# Define some important parameters for the magnet
-		self.Field = 0.0
-		self.SourceCurrent = 0.0
-		self.Heater = False
-		self.MagnetCurrent = 0.0
-		self.AToB = 0.0
-		self.Rate = 2.19
-		self.MaxRate = 2.19
-		self.CurrentLimit = 0.0
+		self.field = 0.0
+		self.source_current = 0.0
+		self.heater = False
+		self.magnet_current = 0.0
+		self.a_to_b = 0.0
+		self.rate = 2.19
+		self.max_rate = 2.19
+		self.current_limit = 0.0
 		
 		# Set up the lock for the switch heater
-		self.Lock = False
-		self.LockTime = 0.0
+		self.lock = False
+		self.lock_time = 0.0
 		
 		# The magnet actions are defined by the following parameters.
 		# The daemon tries to reach the target field and then put the heater into the target state
-		self.TargetField = 0.0
-		self.TargetHeater = False
+		self.target_field = 0.0
+		self.target_heater = False
 		
-		self.SweepNow = False
-		self.Ready = 1 # Ready message which is also broadcast to the listener
+		self.sweep_now = False
+		self.ready = 1  # ready message which is also broadcast to the listener
 		
 		return
 	
-	#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	# COMMUNICATION PROGRAMS
-	#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	
-	############################################
-	# Function to read one of the numeric signals
-	###########################################
-	
-	def MagnetReadNumeric(self, Command):
+	def magnet_read_numeric(self, command):
+		"""Function to read one of the numeric signals"""
+		
 		# Form the query string (Now only for GRPZ)
-		Query = "".join(("READ:DEV:GRPZ:PSU:SIG:",Command))
-		Reply = self.Visa.query(Query)
+		query = "".join(("READ:DEV:GRPZ:PSU:SIG:", command))
+		reply = self.visa.query(query)
+		
 		# Find the useful part of the response
-		Answer = str.rsplit(Reply,":",1)[1]
+		answer = str.rsplit(reply, ":", 1)[1]
 		
 		# Some regex to get rid of the appended units
-		Answer = re.split("[a-zA-Z]",Answer,1)[0]
-		Answer = float(Answer)
+		answer = re.split("[a-zA-Z]", answer, 1)[0]
+		answer = float(answer)
 		
-		return Answer
+		return answer
 	
-	############################################
-	# Function to read the field in Tesla specifically
-	###########################################
-	
-	def MagnetReadField(self):
+	def magnet_read_field(self):
+		"""Function to read the field in Tesla specifically"""
 		
 		# Form the query string (Now only for GRPZ)
-		if self.Heater:
-			Query = "READ:DEV:GRPZ:PSU:SIG:FLD"
+		if self.heater:
+			query = "READ:DEV:GRPZ:PSU:SIG:FLD"
 		else:
 			# For some reason the command PFLD doesn't work
-			Query = "READ:DEV:GRPZ:PSU:SIG:PCUR"
+			query = "READ:DEV:GRPZ:PSU:SIG:PCUR"
 		
-		Reply = self.Visa.query(Query)
+		reply = self.visa.query(query)
+		
 		# Find the useful part of the response
-		Answer = str.rsplit(Reply,":",1)[1]
+		answer = str.rsplit(reply, ":", 1)[1]
 		# Some regex to get rid of the appended units
-		Answer = re.split("[a-zA-Z]",Answer,1)[0]
-		Answer = float(Answer)
-		if self.Heater:
-			self.SourceCurrent = Answer * self.AToB
-			self.MagnetCurrent = self.SourceCurrent
+		answer = re.split("[a-zA-Z]", answer, 1)[0]
+		answer = float(answer)
+		
+		if self.heater:
+			self.source_current = answer * self.a_to_b
+			self.magnet_current = self.source_current
 		else:
-			self.MagnetCurrent = Answer
-			Answer = Answer / self.AToB
+			self.magnet_current = answer
+			answer = answer / self.a_to_b
 					
-		self.Field = Answer
+		self.field = answer
 		
 		return
 	
-	#########################################
-	# Read one of the numeric configs
-	########################################
-	
-	def MagnetReadConfNumeric(self, Command):
+	def magnet_read_conf_numeric(self, command):
+		"""Read one of the numeric configs"""
+		
 		# Form the query string (Now only for GRPZ)
-		Query = "".join(("READ:DEV:GRPZ:PSU:",Command))
-		Reply = self.Visa.query(Query)
+		query = "".join(("READ:DEV:GRPZ:PSU:", command))
+		reply = self.visa.query(query)
+		
 		# Find the useful part of the response
-		Answer = str.rsplit(Reply,":",1)[1]
+		answer = str.rsplit(reply, ":", 1)[1]
 		
 		# Some regex to get rid of the appended units
-		Answer = re.split("[a-zA-Z]",Answer,1)[0]
-		Answer = float(Answer)
+		answer = re.split("[a-zA-Z]", answer, 1)[0]
+		answer = float(answer)
 		
-		return Answer
+		return answer
 	
-	################################################
-	# Function to set one of the numeric signals
-	#############################################
-	
-	def MagnetSetNumeric(self, Command, Value):
+	def magnet_set_numeric(self, command, value):
+		"""Function to set one of the numeric signals"""
+		
 		# Form the query string (Now only for GRPZ)
-		writeCmd = "SET:DEV:GRPZ:PSU:SIG:%s:%.4f" % (Command, Value)
-		Reply = self.Visa.query(writeCmd)
+		write_command = "SET:DEV:GRPZ:PSU:SIG:%s:%.4f" % (command, value)
+		reply = self.visa.query(write_command)
 		
-		Answer = str.rsplit(Reply,":",1)[1]
-		if Answer == "VALID":
-			Valid = 1
-		elif Answer == "INVALID":
-			Valid = 0
+		answer = str.rsplit(reply, ":", 1)[1]
+		if answer == "VALID":
+			valid = 1
+		elif answer == "INVALID":
+			valid = 0
 		else:
-			Valid = -1
+			valid = -1
 		
-		return Valid
+		return valid
 	
-	#############################################################
-	# Function to read the switch heater state returns boolean
-	###########################################################
-	
-	def MagnetReadHeater(self):
-		Reply = self.Visa.query("READ:DEV:GRPZ:PSU:SIG:SWHT")
-		Answer = str.rsplit(Reply,":",1)[1]
-		if Answer == "ON":
-			Valid = 1
-			self.Heater = True
-		elif Answer == "OFF":
-			Valid = 0
-			self.Heater = False
-		else:
-			Valid = -1
+	def magnet_read_heater(self):
+		"""Function to read the switch heater state returns boolean"""
 		
-		return Valid
-	
-	##################################################
-	# Turn the switch heater ON (1) or OFF (0)
-	####################################################
-	
-	def MagnetSetHeater(self, State):
-	   
-		self.MagnetSetAction("HOLD")
-		HeaterBefore = self.Heater
-		if State:
-			Reply = self.Visa.query("SET:DEV:GRPZ:PSU:SIG:SWHT:ON")
+		reply = self.visa.query("READ:DEV:GRPZ:PSU:SIG:SWHT")
+		answer = str.rsplit(reply, ":", 1)[1]
+		
+		if answer == "ON":
+			valid = 1
+			self.heater = True
+		elif answer == "OFF":
+			valid = 0
+			self.heater = False
 		else:
-			Reply = self.Visa.query("SET:DEV:GRPZ:PSU:SIG:SWHT:OFF")
+			valid = -1
+		
+		return valid
+	
+	def magnet_set_heater(self, state):
+		"""Turn the switch heater ON (1) or OFF (0)"""
+		
+		self.magnet_set_action("HOLD")
+		heater_before = self.heater
+		if state:
+			reply = self.visa.query("SET:DEV:GRPZ:PSU:SIG:SWHT:ON")
+		else:
+			reply = self.visa.query("SET:DEV:GRPZ:PSU:SIG:SWHT:OFF")
 			
-		Answer = str.rsplit(Reply,":",1)[1]
-		if Answer == "VALID":
-			Valid = 1
-		elif Answer == "INVALID":
-			Valid = 0
+		answer = str.rsplit(reply, ":", 1)[1]
+
+		valid = 0
+		if answer == "VALID":
+			valid = 1
+		elif answer == "INVALID":
+			valid = 0
 		time.sleep(5.)
-		self.MagnetReadHeater()
-		HeaterAfter = self.Heater
-		if HeaterAfter != HeaterBefore:
-			print("Heater switched ... locking for 2 minutes...")
-			self.Lock = True
-			self.LockTime = datetime.now()
+		self.magnet_read_heater()
+		heater_after = self.heater
+		if heater_after != heater_before:
+			print("heater switched ... locking for 2 minutes...")
+			self.lock = True
+			self.lock_time = datetime.now()
 			
-		return Valid
+		return valid
 	
-	#######################################################
-	# Read the current magnet action e.g. HOLD, RTOZ etc.
-	##########################################################
-	
-	def MagnetReadAction(self):
+	def magnet_read_action(self):
+		""" Read the current magnet action e.g. HOLD, RTOZ etc."""
 		
-		Reply = self.Visa.query("READ:DEV:GRPZ:PSU:ACTN")
-		Answer = str.rsplit(Reply,":",1)[1]
-		return Answer
+		reply = self.visa.query("READ:DEV:GRPZ:PSU:ACTN")
+		answer = str.rsplit(reply, ":", 1)[1]
+		return answer
 	
-	########################################################
-	# Set the action for the magnet
-	######################################################
-	
-	def MagnetSetAction(self, Command):
+	def magnet_set_action(self, command):
+		"""Set the action for the magnet"""
 		
-		Reply = self.Visa.query("".join(("SET:DEV:GRPZ:PSU:ACTN:",Command)))	
+		reply = self.visa.query("".join(("SET:DEV:GRPZ:PSU:ACTN:", command)))	
 		
-		Answer = str.rsplit(Reply,":",1)[1]
-		if Answer == "VALID":
-			Valid = 1
-		elif Answer == "INVALID":
-			Valid = 0
+		answer = str.rsplit(reply, ":", 1)[1]
+		if answer == "VALID":
+			valid = 1
+		elif answer == "INVALID":
+			valid = 0
 		else:
-			Valid = -1
+			valid = -1
 			
-		return Valid
+		return valid
 	
-	##########################################################
-	# Check if it is safe to switch the switch heater
-	#######################################################
-	
-	def MagnetCheckSwitchable(self):
+	def magnet_check_switchable(self):
+		"""Check if it is safe to switch the switch heater"""
 		
-		self.MagnetReadHeater()
-		self.SourceCurrent = self.MagnetReadNumeric("CURR")
-		self.MagnetCurrent = self.MagnetReadNumeric("PCUR")
-		
-		if self.Heater:
-			Switchable = True
-		elif abs(self.SourceCurrent - self.MagnetCurrent) <= 0.1:
-			Switchable = True
-		elif self.Heater == 0 and abs(self.SourceCurrent - self.MagnetCurrent) >= 0.1:
-			Switchable = False
+		self.magnet_read_heater()
+		self.source_current = self.magnet_read_numeric("CURR")
+		self.magnet_current = self.magnet_read_numeric("PCUR")
+
+		switchable = False
+		if self.heater:
+			switchable = True
+		elif abs(self.source_current - self.magnet_current) <= 0.1:
+			switchable = True
+		elif self.heater == 0 and abs(self.source_current - self.magnet_current) >= 0.1:
+			switchable = False
 			
-		Action = self.MagnetReadAction()
-		if Action == "RTOZ" or Action == "RTOS":
-			Switchable = False
+		action = self.magnet_read_action()
+		if action == "RTOZ" or action == "RTOS":
+			switchable = False
 		
-		return Switchable
+		return switchable
 	
-	##########################################################
-	# On start get parameters
-	##########################################################
-	
-	def MagnetOnStartUp(self):
+	def magnet_on_start_up(self):
+		"""On start get parameters"""
 		
 		# Check the heater
-		self.MagnetReadHeater()
-		self.AToB = self.MagnetReadConfNumeric("ATOB")
+		self.magnet_read_heater()
+		self.a_to_b = self.magnet_read_conf_numeric("ATOB")
+		
 		# Take care of the field sourcecurrent and magnetcurrent
-		self.MagnetReadField()
-		self.CurrentLimit = self.MagnetReadConfNumeric("CLIM")
-		self.TargetField = self.Field
-		self.TargetHeater = self.Heater
+		self.magnet_read_field()
+		self.current_limit = self.magnet_read_conf_numeric("CLIM")
+		self.target_field = self.field
+		self.target_heater = self.heater
 		
-		if self.Heater:
-			HeaterString = "ON"
+		if self.heater:
+			heater_string = "ON"
 		else:
-			HeaterString = "OFF"
+			heater_string = "OFF"
 		
-		print("Connected to magnet... Heater is %s, Field is %.4f, Magnet conversion = %.4f A/T, Maximum current = %.3f" % (HeaterString, self.Field, self.AToB, self.CurrentLimit))
+		print(
+			f"Connected to magnet... heater is {heater_string}, field is {self.field:.4f}, "
+			f"Magnet conversion = {self.a_to_b:.4f} A/T, Maximum current = {self.current_limit:.3f}"
+		)
 		
 		return
 	
-	##########################################################
-	# Set the leads current, ignore the switch heater state, busy etc
-	##########################################################
-	
-	def SetSource(self,NewSet):
+	def set_source(self, new_set):
+		"""Set the leads current, ignore the switch heater state, busy etc"""
 		
-		if abs(NewSet) <= self.CurrentLimit:
-			CSet = NewSet
+		if abs(new_set) <= self.current_limit:
+			c_set = new_set
 		else:
-			CSet = np.copysign(self.CurrentLimit,NewSet)
+			c_set = np.copysign(self.current_limit, new_set)
 			
-		self.MagnetSetNumeric("CSET",CSet)
+		self.magnet_set_numeric("CSET", c_set)
 		
 		# If the heater is on set the rate
-		
-		if self.Heater:
-			if self.Rate >= self.MaxRate:
-				self.Rate = self.MaxRate
-			self.MagnetSetNumeric("RCST", self.Rate)
+		if self.heater:
+			if self.rate >= self.max_rate:
+				self.rate = self.max_rate
+			self.magnet_set_numeric("RCST", self.rate)
 			
-		SetRate = self.MagnetReadNumeric("RCST")
-		self.MagnetSetAction("RTOS")
-		print("Ramping source to %.4f A at %.4f A/m\n" % (CSet,SetRate))
+		set_rate = self.magnet_read_numeric("RCST")
+		self.magnet_set_action("RTOS")
+		print(f"Ramping source to {c_set:.4f} A at {set_rate:.4f} A/m\n")
 		return
 	
-	def QueryAtTarget(self):
-		if abs(self.TargetField) < 1.0:
-			if abs(self.Field-self.TargetField) < 0.0003:
-				AtTarget = True
-			else:
-				AtTarget = False
-		else:
-			if (abs((self.Field-self.TargetField)/self.TargetField) <= 0.00015):
-				AtTarget = True
-			else:
-				AtTarget = False
-		return AtTarget
-
-	
-	def UpdateReady(self):
+	def query_at_target(self):
 		
-		if self.QueryAtTarget() and (self.Heater == self.TargetHeater):
+		if abs(self.target_field) < 1.0:
+			if abs(self.field-self.target_field) < 0.0003:
+				at_target = True
+			else:
+				at_target = False
+		else:
+			if abs((self.field-self.target_field)/self.target_field) <= 0.00015:
+				at_target = True
+			else:
+				at_target = False
+		return at_target
+
+	def update_ready(self):
+		
+		if self.query_at_target() and (self.heater == self.target_heater):
 			# The system is at target and ready
-			self.Ready = 1
+			self.ready = 1
 		else:
 			# Idle
-			self.Ready = 0
-			
+			self.ready = 0
 		return
 
-	# Interpret a message from the socket
-	def ReadMsg(self,Msg):
-		# There are two possible actionable calls to the daemon
-		# 1. "SET" go to set point
-		# 2. "SWP" sweep from the current field to a target
-		Msg = Msg.split(" ")
-		if Msg[0] == "SET":
-			# Set message has form "SET TargetField TargetHeater"
+	def read_msg(self, msg):
+		"""Interpret a message from the socket
+		There are two possible actionable calls to the daemon
+		1. "SET" go to set point
+		2. "SWP" sweep from the current field to a target
+		"""
+
+		msg = msg.split(" ")
+		if msg[0] == "SET":
+			# Set message has form "SET target_field target_heater"
 			try:
-				NewField = float(Msg[1])
-				NewHeater = int(Msg[2])
-				NewHeater = bool(NewHeater)
-				if (NewField != self.TargetField) or (NewHeater != self.TargetHeater):
-					self.TargetField = NewField
-					self.TargetHeater = NewHeater
-					self.Rate = self.MaxRate
-					self.UpdateReady()
-					if not self.Ready:
-						print("Got new set point from socket %.4f T" % self.TargetField)
+				new_field = float(msg[1])
+				new_heater = int(msg[2])
+				new_heater = bool(new_heater)
+				if (new_field != self.target_field) or (new_heater != self.target_heater):
+					self.target_field = new_field
+					self.target_heater = new_heater
+					self.rate = self.max_rate
+					self.update_ready()
+					if not self.ready:
+						print(f"Got new set point from socket {self.target_field:.4f} T")
 			except:
 				pass
 
-		if Msg[0] == "SWP":
-			# Message has form "SWP TargetField Rate TargetHeater"
-			#print Msg
+		if msg[0] == "SWP":
+			# Message has form "SWP target_field rate target_heater"
+			# print msg
 			try:
-				NewField = float(Msg[1])
-				NewHeater = int(Msg[3])
-				NewHeater = bool(NewHeater)
-				self.Rate = float(Msg[2]) * self.AToB
-				if (NewField != self.TargetField) or (NewHeater != self.TargetHeater):
-					self.TargetField = NewField
-					self.TargetHeater = NewHeater
-					self.UpdateReady()
-					if not self.Ready:
-						print("Got new sweep point from socket to %.4f T at %.4f T/min" % (self.TargetField,self.Rate/self.AToB))
+				new_field = float(msg[1])
+				new_heater = int(msg[3])
+				new_heater = bool(new_heater)
+				self.rate = float(msg[2]) * self.a_to_b
+				if (new_field != self.target_field) or (new_heater != self.target_heater):
+					self.target_field = new_field
+					self.target_heater = new_heater
+					self.update_ready()
+					if not self.ready:
+						print(
+							f"Got new sweep point from socket to {self.target_field:.4f} T"
+							f" at {self.rate/self.a_to_b:.4f} T/min"
+						)
 			except:
 				pass
 			
 			return
 		
+
 if __name__ == '__main__':
 	
 	# Initialize a daemon instance and runs startup codes
 	control = MControl()
-	control.MagnetOnStartUp()
+	control.magnet_on_start_up()
 	# A flag to control the source behavior
-	SourceFlag = False
+	source_flag = False
 	
 	while 1:
 		
 		# Read the field and update the ready message
-		control.MagnetReadField()
-		StatusMsg = control.UpdateReady()
-
-		#print control.TargetField, control.TargetHeater, control.Ready, control.Lock
+		control.magnet_read_field()
 
 		# Push the reading to clients
-		for j in control.Server.handlers:
-			j.to_send = ",%.5f %d" % (control.Field, control.Ready)
-			SocketMsg = j.received_data
-			if SocketMsg and SocketMsg != "-":
-				control.ReadMsg(SocketMsg)
-		asyncore.loop(count=1,timeout=0.001)
+		for j in control.server.handlers:
+			j.to_send = ",%.5f %d" % (control.field, control.ready)
+			socket_msg = j.received_data
+			if socket_msg and socket_msg != "-":
+				control.read_msg(socket_msg)
+		asyncore.loop(count=1, timeout=0.001)
 				
 		""" Now we should do stuff depending on the socket and what we 
 		were doing before reading the socket
@@ -417,72 +367,75 @@ if __name__ == '__main__':
 		1. We are locked, waiting for the switch heater -> delay any actions
 		2. Go to the target field
 		3. Go to the target heater
-		4. ... just chill out! """
+		4. ... just chill out! 
+		"""
 		
-		if control.Lock:
+		if control.lock:
 			# Check if we can release the lock
-			Wait = datetime.now() - control.LockTime
-			if Wait.seconds >= 120.0:
+			wait = datetime.now() - control.lock_time
+			if wait.seconds >= 120.0:
 				# Unlock
-				control.Lock = False
+				control.lock = False
 				print("Unlocking...")
 
-
-
-		if not control.Lock and not control.Ready:
+		if not control.lock and not control.ready:
 			""" The magnet is not locked and not ready
-			We now try to go to the TargetField and
-			set the TargetHeater """
+			We now try to go to the target_field and
+			set the target_heater 
+			"""
 			
-			if not control.QueryAtTarget():
+			if not control.query_at_target():
 				# System is not at the target field
-				if not control.Heater:
+				if not control.heater:
 					# The heater is not on
-					if control.MagnetCheckSwitchable():
+					if control.magnet_check_switchable():
 						# The switch heater can be switched ON --> so switch it ON
-						control.MagnetSetHeater(True) # this will set the lock so we need to get out of the loop without doing anything else
+						control.magnet_set_heater(True) 
+						# this will set the lock so we need to get out of the loop without doing anything else
 					else:
 						# The switch heater is not on
-						Action = control.MagnetReadAction()
-						if Action != "RTOS":
+						action = control.magnet_read_action()
+						if action != "RTOS":
 							# The source is not ramping --> Ramp it to the magnet current so it can be switched
-							control.SetSource(control.MagnetCurrent)
+							control.set_source(control.magnet_current)
 				else:
 					# The heater is on --> so go to the target
-					Action = control.MagnetReadAction()
-					SetCurrent = control.MagnetReadNumeric("CSET")
-					if Action != "RTOS" or abs(SetCurrent - control.TargetField * control.AToB) > 0.005:
+					action = control.magnet_read_action()
+					set_current = control.magnet_read_numeric("CSET")
+					if action != "RTOS" or abs(set_current - control.target_field * control.a_to_b) > 0.005:
 						# The source is not ramping --> Ramp it to the magnet current so it can be switched
-						TargetCurrent = control.TargetField * control.AToB
-						control.SetSource(TargetCurrent)
+						target_current = control.target_field * control.a_to_b
+						control.set_source(target_current)
 			
-			elif control.Heater != control.TargetHeater:
+			elif control.heater != control.target_heater:
 				""" The magnet is at the target field but the heater is not in the target state
 				There are two possibilities
 				1. The heater is now ON --> turn it off and ramp the source down
-				2. The heater is OFF --> Set the source to magnet current and turn it on """
-				if control.Heater:
+				2. The heater is OFF --> Set the source to magnet current and turn it on 
+				"""
+				if control.heater:
 					# The heater is on
-					if control.MagnetCheckSwitchable():
-						control.MagnetSetHeater(False)
+					if control.magnet_check_switchable():
+						control.magnet_set_heater(False)
 						# Set the source flag to tell the source to ramp to zero
-						SourceFlag = True
+						source_flag = True
 
 				else:
 					# The heater is not on
-					if control.MagnetCheckSwitchable():
+					if control.magnet_check_switchable():
 						# The switch heater can be switched ON --> so switch it ON
-						control.MagnetSetHeater(True) # this will set the lock so we need to get out of the loop without doing anything else
+						control.magnet_set_heater(True)
+						# this will set the lock so we need to get out of the loop without doing anything else
 					else:
 						# The switch heater is not on
-						Action = control.MagnetReadAction()
-						if Action != "RTOS":
+						action = control.magnet_read_action()
+						if action != "RTOS":
 							# The source is not ramping --> Ramp it to the magnet current so it can be switched
-							control.SetSource(control.MagnetCurrent)
+							control.set_source(control.magnet_current)
 
-		if not control.Lock and SourceFlag:
-			# The SourceFlag has been set ramp the source to zero and unset the flag
-			control.MagnetSetAction("RTOZ")
-			SourceFlag = False
+		if not control.lock and source_flag:
+			# The source_flag has been set ramp the source to zero and unset the flag
+			control.magnet_set_action("RTOZ")
+			source_flag = False
 			
 		time.sleep(0.4)
