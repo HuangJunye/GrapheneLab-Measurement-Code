@@ -38,7 +38,7 @@ class Keithley(Instrument):
             f"compliance={self.compliance}"
             "\n"
         )
-        return  description_string
+        return description_string
 
     def initialize(
             self, mode="VOLT", source_range=21, sense_range=105e-9, compliance=105e-9,
