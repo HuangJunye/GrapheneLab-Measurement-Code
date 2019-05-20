@@ -16,6 +16,29 @@ class Keithley(Instrument):
     def __init__(self, address):
         super().__init__(address)
         self.mode = ""
+        self.column_names = ""
+        self.data = [0.0, 0.0]
+        self.source_column = 0
+        self.data_column = 1
+        self.source = ""
+        self.sense = ""
+        self.compliance = 0
+        self.ramp_step = 0
+        self.source_range = 0
+        self.sense_range = 0
+        self.output = False
+
+    def description(self):
+        """ Print a description string to data file"""
+
+        description_string = (
+            f"{super().description()}, "
+            f"source={self.source}, "
+            f"sense={self.sense}, "
+            f"compliance={self.compliance}"
+            "\n"
+        )
+        return  description_string
 
     def initialize(
             self, mode="VOLT", source_range=21, sense_range=105e-9, compliance=105e-9,
@@ -77,6 +100,20 @@ class Keithley(Instrument):
             self.read_data()
 
         return
+
+    def read_data(self):
+        reply = self.visa.query(":READ?")
+        self.data = [float(i) for i in reply.split(",")[0:2]]
+        pass
+
+    def set_output(self, level):
+        self.visa.write(f":SOUR:{self.source} {level:.4e}")
+        pass
+
+    def switch_output(self):
+        self.output = not self.output
+        self.visa.write(f":OUTP:STAT {self.output}")
+        pass
 
     def ramp(self, finish_value):
         """ A method to ramp the instrument"""
