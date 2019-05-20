@@ -1,22 +1,22 @@
 import time
 
-import utils.visa_subs as visa_subs
+from .sourcemeter import Keithley
 
 
-class K6221:
+class K6221(Keithley):
     # The 6221 operates only as a source, these functions configure it as an AC source (WAVE mode)
     # and the measurement is made by the Lockin
 
     def __init__(self, address):
+        super().__init__(address)
         self.name = "Keithley 6221"
-        self.address = address
-        self.visa = visa_subs.initialize_gpib(address, 0)
-        # Other 6430 properties
+
         # Query the output state
         self.output = False
         reply = self.visa.query(":OUTP:STAT?")
         reply = int(reply)
         self.output = bool(reply)
+
         if self.output:
             self.compliance = self.read_numeric(":SOUR:CURR:COMP?")
             self.frequency = self.read_numeric(":SOUR:WAVE:FREQ?")
@@ -32,27 +32,35 @@ class K6221:
             self.phase = 0.0  # position of the phase marker
             self.trigger_pin = 2  # pin to write the trigger
             self.visa.write(":SOUR:CLE:IMM")
+
         self.ramp_step = 10e-9
         self.source = "CURR"
         self.column_names = "I (A)"
         self.data_column = 0
         self.data = [self.amplitude]  # Amperes
 
-    # Move the trigger pin so we can set the phase marker to line 2
+    def description(self):
+        """ Print a description string to data file"""
 
-    ######################################
-    # Initialize as voltage source
-    #######################################
+        description_string = (
+            f"{super().description()}, "
+            f"amplitude={self.amplitude}, "
+            f"frequency={self.frequency}, "
+            f"compliance={self.compliance}"
+            "\n"
+        )
+        return description_string
 
-    def initialize_wave(
-            self, compliance=0.1, ramp_step=1e-9, auto_range=True,
+    def initialize(
+            self, compliance=0.1, ramp_step=1e-9, auto_sense_range=True,
             frequency=9.2, offset=0.0, phase=0.0
     ):
 
         self.column_names = "I (A)"
         self.data_column = 0
         self.source = "CURR"
-        # A bunch of commands to configure the 6430
+
+        # A bunch of commands to configure the 6221
         if not self.output:
             self.compliance = compliance
             self.ramp_step = ramp_step
@@ -61,45 +69,28 @@ class K6221:
             self.phase = phase
             self.visa.write("*RST")
             time.sleep(.1)
-            # self.visa.write(":OUTP:LTE ON")
+
             self.visa.write(":SOUR:WAVE:FUNC SIN")
-            if auto_range:
+            if auto_sense_range:
                 self.visa.write(":SOUR:WAVE:RANG BEST")
             else:
                 self.visa.write(":SOUR:WAVE:RANG FIX")
 
             self.visa.write(":TRIG:OLIN 4")
-            self.visa.write(":SOUR:WAVE:PMAR:OLIN %d" % self.trigger_pin)
+            self.visa.write(f":SOUR:WAVE:PMAR:OLIN {self.trigger_pin}")
             self.visa.write(":SOUR:WAVE:PMAR:STAT ON")
-            self.visa.write(":SOUR:WAVE:PMAR %.1f" % self.phase)
+            self.visa.write(f":SOUR:WAVE:PMAR {self.phase:.1f}")
 
-            self.visa.write(":SOUR:CURR:COMP %.3e" % self.compliance)
-            self.visa.write(":SOUR:WAVE:FREQ %.3e" % self.frequency)
-            self.visa.write(":SOUR:WAVE:OFFS %.3e" % self.offset)
-            self.visa.write(":SOUR:WAVE:AMPL %.3e" % self.ramp_step)
+            self.visa.write(f":SOUR:CURR:COMP {self.compliance:.3e}")
+            self.visa.write(f":SOUR:WAVE:FREQ {self.frequency:.3e}")
+            self.visa.write(f":SOUR:WAVE:OFFS {self.offset:.3e}")
+            self.visa.write(f":SOUR:WAVE:AMPL {self.ramp_step:.3e}%")
 
         return
 
-    ##################################################
-    # Read numeric
-    ################################################
-
-    def read_numeric(self, command):
-        reply = self.visa.query(command)
-        answer = float(reply)
-        return answer
-
-    ##################################################
-    # Set source
-    ##################################################
-
     def set_output(self, level):
-        self.visa.write(":SOUR:WAVE:AMPL %.4e" % level)
+        self.visa.write(f":SOUR:WAVE:AMPL {level:.4e}")
         pass
-
-    #################################################
-    # Switch the output
-    ###############################################
 
     def switch_output(self):
         self.output = not self.output
@@ -110,25 +101,6 @@ class K6221:
             self.visa.write(":SOUR:WAVE:ABOR")
 
         pass
-
-    ###################################################
-    # Print a description string
-    ################################################
-
-    def description(self):
-        description_string = "Keithley6221"
-        for item in list(vars(self).items()):
-            if item[0] == "address" or item[0] == "amplitude" or item[0] == "frequency":
-                description_string = ", ".join((description_string, "%s = %.3f" % item))
-            elif item[0] == "Compliance":
-                description_string = ", ".join((description_string, "%s = %s" % item))
-
-        description_string = "".join((description_string, "\n"))
-        return description_string
-
-    ############################################
-    # ramp the source to a final value
-    #########################################
 
     def ramp(self, v_finish):
         v_start = self.amplitude

@@ -1,81 +1,52 @@
 import time
 
-import utils.visa_subs as visa_subs
+from ..generic_instrument import Instrument
 
 
-class LS475Gaussmeter:
+class LS475Gaussmeter(Instrument):
+    """Lake Shore Model 475 DSP Gaussmeter driver
+
+    """
+
     def __init__(self, address):
-        self.name = "Lake Shore 475 DSP"
-        self.address = address
-        self.visa = visa_subs.initialize_gpib(address, 0)
-        self.output = False
+        super().__init__(address)
+
+        self.name = "LS475 Gaussmeter"
+
         self.source = "Field"
+        self.sense = ""
+        self.column_names = "B (G)"
         self.data = [0.0]
-        self.sense = []
-        self.column_names = "(Gauss)"
         self.data_column = 0
         self.source_column = 1
 
-    ######################################
-    # Initializate as voltage source
-    #######################################
+        self.output = False
 
-    def initialize_gauss(self):
+    def initialize(self):
         self.visa.write("UNIT 1")
         self.visa.write("CMODE 1")
         self.visa.write("CPARAM 15.0, 5.0, 3000.0, 40.0 ")
         pass
 
-    ##################################################
-    # Read data
-    ################################################
-
     def read_data(self):
+        """ Read magnetic field """
         reply = self.visa.ask(":RDGFIELD?")
         self.data = [reply]
         pass
 
-    ##################################################
-    # Set source
-    ##################################################
-
     def set_output(self, level):
-        self.visa.write("CSETP %.4e" % level)
+        self.visa.write(f"CSETP {level:.4e}")
         time.sleep(4.0)
         pass
 
-    #################################################
-    # Switch the output
-    ###############################################
-
-    def switch_ouptput(self):
+    def switch_output(self):
         self.output = not self.output
         pass
 
-    ###################################################
-    # Print a description string
-    ################################################
-
-    def description(self):
-        description_string = "Lake Shore Gaussmeter"
-        for item in list(vars(self).items()):
-            if item[0] == "address":
-                description_string = ", ".join((description_string, "%s = %.3f" % item))
-            elif item[0] == "source" or item[0] == "sense" or item[0] == "Compliance":
-                description_string = ", ".join((description_string, "%s = %s" % item))
-
-        description_string = "".join((description_string, "\n"))
-        return description_string
-
-    ############################################
-    # ramp the source to a final value
-    #########################################
-
-    def ramp(self, v_finish):
+    def ramp(self, finish_value):
         time1 = float(self.visa.ask(":RDGFIELD?"))
-        time2 = 4 * abs(v_finish - time1) / 50
-        self.visa.write("CSETP %.4e" % v_finish)
+        time2 = 4 * abs(finish_value - time1) / 50
+        self.set_output(finish_value)
         print("Ramping to Field Value")
         time.sleep(time2)
-
         return
