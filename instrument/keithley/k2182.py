@@ -26,7 +26,7 @@ class K2182(Keithley):
             f"sense={self.sense}, "
             f"sense range={self.sense_range}, "
             f"relative={self.relative}, "
-            f"relative value={self.relative value}, "
+            f"relative value={self.relative_value}, "
             "\n"
         )
         return description_string
