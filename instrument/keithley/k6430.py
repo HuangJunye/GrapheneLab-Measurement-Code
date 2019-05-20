@@ -1,6 +1,6 @@
 import time
 
-from .k_meter import Keithley
+from .sourcemeter import Keithley
 
 
 class K6430(Keithley):

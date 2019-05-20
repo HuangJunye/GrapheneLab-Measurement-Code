@@ -1,4 +1,4 @@
-from .k_meter import Keithley
+from .sourcemeter import Keithley
 
 
 class K2400(Keithley):
