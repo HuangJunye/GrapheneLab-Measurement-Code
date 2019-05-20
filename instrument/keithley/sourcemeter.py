@@ -101,6 +101,11 @@ class Keithley(Instrument):
 
         return
 
+    def read_numeric(self, command):
+        reply = self.visa.query(command)
+        answer = float(reply)
+        return answer
+
     def read_data(self):
         reply = self.visa.query(":READ?")
         self.data = [float(i) for i in reply.split(",")[0:2]]
