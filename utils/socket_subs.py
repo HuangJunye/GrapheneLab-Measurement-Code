@@ -10,7 +10,7 @@ This file contains some utilities to create a socket server, handler and client
 
 import asyncore
 import socket
-
+import logging
 
 class SockServer(asyncore.dispatcher):
 
