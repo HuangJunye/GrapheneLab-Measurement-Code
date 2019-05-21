@@ -25,10 +25,10 @@ class PID:
 		Calculate PID output value for given reference input and feedback
 		"""
 
-		self.error = self.set_point - current_value
+		self.error = (self.set_point - current_value) * 1000  # 1 for S0703, 1000 for Cernox
 
 		self.p_value = self.k_p * self.error
-		self.d_value = self.k_d * ( self.error - self.derivator)
+		self.d_value = self.k_d * (self.error - self.derivator)
 		self.derivator = self.error
 
 		self.integrator = self.integrator + self.error

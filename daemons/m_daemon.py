@@ -5,7 +5,7 @@ from datetime import datetime
 
 import numpy as np
 
-import utils.socket_utils as socket_utils
+import utils.socket_subs as socket_subs
 import utils.visa_subs as visa_subs
 
 
@@ -32,7 +32,7 @@ class MControl:
 		self.visa.timeout = 200000
 		# Open the socket
 		address = ('localhost', 18861)
-		self.server = socket_utils.SockServer(address)
+		self.server = socket_subs.SockServer(address)
 		
 		# Define some important parameters for the magnet
 		self.field = 0.0

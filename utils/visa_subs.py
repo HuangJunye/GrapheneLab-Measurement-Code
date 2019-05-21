@@ -17,12 +17,13 @@ Functions written:
 
 """
 import visa as visa
+rm = visa.ResourceManager()
 
 
 def initialize_gpib(address, board, query_id=True, read_termination="LF", **kwargs):
 	""" Initalize GPIB devices using PyVisa """
-	rm = visa.ResourceManager()
-	gpib_name = "GPIB%d::%d::INSTR" % (board, address)
+
+	gpib_name = f"GPIB{board}::{address}::INSTR"
 	try:
 		gpib_visa = rm.open_resource(gpib_name)
 		if read_termination == "LF":
@@ -47,7 +48,7 @@ def initialize_gpib(address, board, query_id=True, read_termination="LF", **kwar
 
 def initialize_serial(name, idn="*IDN?", read_termination="LF", **kwargs):
 	""" Initialize Serial devices using PyVisa """
-	rm = visa.ResourceManager()		
+
 	try:
 		serial_visa = rm.open_resource(name)
 		if read_termination == "LF":

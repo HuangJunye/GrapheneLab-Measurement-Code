@@ -41,8 +41,8 @@ from sys import exit
 import numpy as np
 import pyqtgraph as pg
 
-import utils.measurement_subs as measurement_utils
-import utils.socket_utils as socket_utils
+import utils.measurement_subs as measurement_subs
+import utils.socket_subs as socket_subs
 
 pg.setConfigOption("useWeave", False)
 
@@ -66,35 +66,35 @@ def do_device_sweep(
 ):
 
 	# Bind sockets 
-	m_client, m_socket, t_client, t_socket = measurement_utils.initialize_sockets()
+	m_client, m_socket, t_client, t_socket = measurement_subs.initialize_sockets()
 
 	num_of_inst = len(read_inst)
 
 	# set the sweep voltages
 
-	sweep = measurement_utils.generate_device_sweep(sweep_start, sweep_stop, sweep_step, mid=sweep_mid)
+	sweep = measurement_subs.generate_device_sweep(sweep_start, sweep_stop, sweep_step, mid=sweep_mid)
 	set_time = datetime.now()
 
 	# Go to the set temperature and magnetic field and finish in persistent mode
 	if t_set > 0:
 		msg = " ".join(("SET", "%.2f" % t_set))
-		measurement_utils.socket_write(t_client, msg)
+		measurement_subs.socket_write(t_client, msg)
 		print("Wrote message to temperature socket \"%s\"" % msg)
 	if not ignore_magnet:
 		msg = " ".join(("SET", "%.4f" % b_set, "%d" % int(not persist)))
-		measurement_utils.socket_write(m_client, msg)
+		measurement_subs.socket_write(m_client, msg)
 		print("Wrote message to Magnet socket \"%s\"" % msg)
 	time.sleep(5)
 
 	# give precedence to the magnet and wait for the timeout
-	t_socket = measurement_utils.socket_read(t_client, t_socket)
-	m_socket = measurement_utils.socket_read(m_client, m_socket)
+	t_socket = measurement_subs.socket_read(t_client, t_socket)
+	m_socket = measurement_subs.socket_read(m_client, m_socket)
 	if not ignore_magnet:
 		while m_socket[1] != 1:
 			print("Waiting for magnet!")
 			time.sleep(15)
-			t_socket = measurement_utils.socket_read(t_client, t_socket)
-			m_socket = measurement_utils.socket_read(m_client, m_socket)
+			t_socket = measurement_subs.socket_read(t_client, t_socket)
+			m_socket = measurement_subs.socket_read(m_client, m_socket)
 	
 	now_time = datetime.now()
 	remaining = timeout*60.0 - float((now_time-set_time).seconds)
@@ -102,8 +102,8 @@ def do_device_sweep(
 		now_time = datetime.now()
 		remaining = timeout*60.0 - float((now_time-set_time).seconds)
 		print("Waiting for temperature ... time remaining = %.2f minutes" % (remaining/60.0))
-		t_socket = measurement_utils.socket_read(t_client, t_socket)
-		m_socket = measurement_utils.socket_read(m_client, m_socket)	
+		t_socket = measurement_subs.socket_read(t_client, t_socket)
+		m_socket = measurement_subs.socket_read(m_client, m_socket)	
 		time.sleep(15)
 	
 	# Setup L plot windows
@@ -152,20 +152,20 @@ def do_device_sweep(
 			now_time = datetime.now()
 			remaining = wait*60.0 - float((now_time-wait_time).seconds)
 			print("Waiting ... time remaining = %.2f minutes" % (remaining/60.0))
-			t_socket = measurement_utils.socket_read(t_client, t_socket)
-			m_socket = measurement_utils.socket_read(m_client, m_socket)	
+			t_socket = measurement_subs.socket_read(t_client, t_socket)
+			m_socket = measurement_subs.socket_read(m_client, m_socket)	
 			time.sleep(15)
 	print("Starting measurement!")
 
 	start_time = datetime.now()
 
-	writer, file_path, net_dir = measurement_utils.open_csv_file(
+	writer, file_path, net_dir = measurement_subs.open_csv_file(
 		data_file, start_time, read_inst, sweep_inst=[sweep_inst], 
 		set_inst=set_inst, comment=comment, network_dir=network_dir
 	)
 
 	# This is the main measurement loop
-	start_column, data_vector = measurement_utils.generate_data_vector(
+	start_column, data_vector = measurement_subs.generate_data_vector(
 		socket_data_number, read_inst, sample,
 		sweep_inst=True, set_value=set_value
 	)
@@ -173,8 +173,8 @@ def do_device_sweep(
 	for i, v in enumerate(sweep):
 		sweep_inst.set_output(v)
 
-		t_socket = measurement_utils.socket_read(t_client, t_socket)
-		m_socket = measurement_utils.socket_read(m_client, m_socket)
+		t_socket = measurement_subs.socket_read(t_client, t_socket)
+		m_socket = measurement_subs.socket_read(m_client, m_socket)
 
 		data_vector[:, 0] = m_socket[0]
 		data_vector[:, 1:socket_data_number] = t_socket[0]
@@ -266,7 +266,7 @@ def do_fridge_sweep(
 		ignore_magnet=False):
 
 	# Bind sockets 
-	m_client, m_socket, t_client, t_socket = measurement_utils.initialize_sockets()
+	m_client, m_socket, t_client, t_socket = measurement_subs.initialize_sockets()
 
 	if fridge_sweep == "B":
 		b_sweep = True
@@ -291,23 +291,23 @@ def do_fridge_sweep(
 	
 	# Tell the magnet daemon to go to the inital field and set the temperature
 	msg = " ".join(("SET", "%.2f" % t_set[0]))
-	measurement_utils.socket_write(t_client, msg)
+	measurement_subs.socket_write(t_client, msg)
 	print("Wrote message to temperature socket \"%s\"" % msg)
 
 	msg = " ".join(("SET", "%.4f" % b_set[0], "%d" % int(not start_persist)))
-	measurement_utils.socket_write(m_client, msg)
+	measurement_subs.socket_write(m_client, msg)
 	print("Wrote message to Magnet socket \"%s\"" % msg)
 	time.sleep(5)
 
 	# give precedence to the magnet and wait for the timeout
-	t_socket = measurement_utils.socket_read(t_client, t_socket)
-	m_socket = measurement_utils.socket_read(m_client, m_socket)
+	t_socket = measurement_subs.socket_read(t_client, t_socket)
+	m_socket = measurement_subs.socket_read(m_client, m_socket)
 	if not ignore_magnet:
 		while m_socket[1] != 1:
 			print("Waiting for magnet!")
 			time.sleep(15)
-			t_socket = measurement_utils.socket_read(t_client, t_socket)
-			m_socket = measurement_utils.socket_read(m_client, m_socket)
+			t_socket = measurement_subs.socket_read(t_client, t_socket)
+			m_socket = measurement_subs.socket_read(m_client, m_socket)
 	
 	now_time = datetime.now()
 	remaining = timeout*60.0 - float((now_time-set_time).seconds)
@@ -315,8 +315,8 @@ def do_fridge_sweep(
 		now_time = datetime.now()
 		remaining = timeout*60.0 - float((now_time-set_time).seconds)
 		print("Waiting for temperature ... time remaining = %.2f minutes" % (remaining/60.0))
-		t_socket = measurement_utils.socket_read(t_client, t_socket)
-		m_socket = measurement_utils.socket_read(m_client, m_socket)	
+		t_socket = measurement_subs.socket_read(t_client, t_socket)
+		m_socket = measurement_subs.socket_read(m_client, m_socket)	
 		time.sleep(15)
 	
 	# Setup L plot windows
@@ -350,35 +350,35 @@ def do_fridge_sweep(
 			now_time = datetime.now()
 			remaining = wait*60.0 - float((now_time-wait_time).seconds)
 			print("Waiting ... time remaining = %.2f minutes" % (remaining/60.0))
-			t_socket = measurement_utils.socket_read(t_client, t_socket)
-			m_socket = measurement_utils.socket_read(m_client, m_socket)	
+			t_socket = measurement_subs.socket_read(t_client, t_socket)
+			m_socket = measurement_subs.socket_read(m_client, m_socket)	
 			time.sleep(15)
 	print("Starting measurement!")
 
 	start_time = datetime.now()
 
-	writer, file_path, net_dir = measurement_utils.open_csv_file(
+	writer, file_path, net_dir = measurement_subs.open_csv_file(
 		data_file, start_time, read_inst, set_inst=set_inst,
 		comment=comment, network_dir=network_dir
 	)
 
 	# This is the main measurement loop
 
-	start_column, data_vector = measurement_utils.generate_data_vector(
+	start_column, data_vector = measurement_subs.generate_data_vector(
 		socket_data_number, read_inst, sample, set_value=set_value
 	)
 
 	if b_sweep:
 		msg = " ".join(("SWP", "%.4f" % b_set[1], "%.4f" % sweep_rate, "%d" % int(not persist)))
-		measurement_utils.socket_write(m_client, msg)
+		measurement_subs.socket_write(m_client, msg)
 		print("Wrote message to magnet socket \"%s\"" % msg)
 	else:
 		msg = " ".join(("SWP", "%.4f" % t_set[1], "%.4f" % sweep_rate, "%.2f" % max_over_time))
-		measurement_utils.socket_write(t_client, msg)
+		measurement_subs.socket_write(t_client, msg)
 		print("Wrote message to temperature socket \"%s\"" % msg)	
 
-	t_socket = measurement_utils.socket_read(t_client, t_socket)
-	m_socket = measurement_utils.socket_read(m_client, m_socket)
+	t_socket = measurement_subs.socket_read(t_client, t_socket)
+	m_socket = measurement_subs.socket_read(m_client, m_socket)
 	if b_sweep:
 		fridge_status = m_socket[-1]
 	else:
@@ -387,8 +387,8 @@ def do_fridge_sweep(
 	while fridge_status != 0: 
 		time.sleep(1)
 		# print fridge_status
-		t_socket = measurement_utils.socket_read(t_client, t_socket)
-		m_socket = measurement_utils.socket_read(m_client, m_socket)
+		t_socket = measurement_subs.socket_read(t_client, t_socket)
+		m_socket = measurement_subs.socket_read(m_client, m_socket)
 		if b_sweep:
 			fridge_status = m_socket[-1]
 		else:
@@ -403,8 +403,8 @@ def do_fridge_sweep(
 	# print Field
 	while fridge_status == 0 and (not sweep_timeout):
 		
-		t_socket = measurement_utils.socket_read(t_client, t_socket)
-		m_socket = measurement_utils.socket_read(m_client, m_socket)
+		t_socket = measurement_subs.socket_read(t_client, t_socket)
+		m_socket = measurement_subs.socket_read(m_client, m_socket)
 		if b_sweep:
 			fridge_status = m_socket[-1]
 		else:
@@ -465,11 +465,11 @@ def do_fridge_sweep(
 	
 	if b_sweep:
 		msg = " ".join(("SET", "%.4f" % sweep_finish, "%d" % int(not persist)))
-		measurement_utils.socket_write(m_client, msg)
+		measurement_subs.socket_write(m_client, msg)
 		print("Wrote message to Magnet socket \"%s\"" % msg)
 	else:
 		msg = " ".join(("SET", "%.2f" % sweep_finish))
-		measurement_utils.socket_write(t_client, msg)
+		measurement_subs.socket_write(t_client, msg)
 		print("Wrote message to temperature socket \"%s\"" % msg)
 
 	# Copy the file to the network
@@ -557,7 +557,7 @@ def device_fridge_2d(
 		x_vec = x_custom
 
 		if sweep_device:
-			y_len = len(measurement_utils.generate_device_sweep(
+			y_len = len(measurement_subs.generate_device_sweep(
 				device_start, device_stop, device_step, mid=device_mid))
 		else:
 			y_len = abs(y_start-y_stop)/y_step+1
@@ -659,9 +659,9 @@ def device_fridge_2d(
 						z_array[j][i, :] = data_list[j+1]
 						image_view[j].setImage(z_array[j], pos=(x_vec[0], y_start), scale=(x_scale, y_scale))
 
-	m_client = socket_utils.SockClient('localhost', 18861)
+	m_client = socket_subs.SockClient('localhost', 18861)
 	time.sleep(2)
-	measurement_utils.socket_write(m_client, "SET 0.0 0")
+	measurement_subs.socket_write(m_client, "SET 0.0 0")
 	time.sleep(2)
 	m_client.close()
 	
@@ -698,7 +698,7 @@ def device_device_2d(
 	# X is the step axis
 	# Y is the sweep axis
 	x_vec = np.hstack((np.arange(step_start, step_stop+step_step, step_step), step_finish))
-	y_vec = measurement_utils.generate_device_sweep(sweep_start, sweep_stop, sweep_step, mid=sweep_mid)
+	y_vec = measurement_subs.generate_device_sweep(sweep_start, sweep_stop, sweep_step, mid=sweep_mid)
 	y_max = np.max(y_vec)
 	y_min = np.min(y_vec)
 
@@ -761,9 +761,9 @@ def device_device_2d(
 			z_array[j][i, :] = data_list[j+1]
 			image_view[j].setImage(z_array[j], pos=(x_vec[0], y_min), scale=(x_scale, y_scale))
 
-	m_client = socket_utils.SockClient('localhost', 18861)
+	m_client = socket_subs.SockClient('localhost', 18861)
 	time.sleep(2)
-	measurement_utils.socket_write(m_client, "SET 0.0 0")
+	measurement_subs.socket_write(m_client, "SET 0.0 0")
 	time.sleep(2)
 	m_client.close()
 

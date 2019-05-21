@@ -1,9 +1,4 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-
-"""
-
-Sub programs for operation of the PicoWatt and Leiden TCS to control temperature
+"""Sub programs for operation of the PicoWatt and Leiden TCS to control temperature
 
 author : Eoin O'Farrell
 email : phyoec@nus.edu.sg
@@ -12,10 +7,6 @@ last edited : August 2013
 This file contains some utilities to create a socket server, handler and client
 
 """
-
-#######################################
-# Basic class to receive incoming connection requests
-#######################################
 
 import asyncore
 import socket

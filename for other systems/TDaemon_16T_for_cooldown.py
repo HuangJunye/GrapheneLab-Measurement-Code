@@ -33,7 +33,7 @@ ToDo:
 	ReadAllTemperatures was updated. all temperatures are shown. Use only for cooling down process.
 """
 
-import utils.socket_utils as SocketUtils
+import utils.socket_subs as SocketUtils
 import logging
 import visa as visa
 import utils.visa_subs as VisaSubs
