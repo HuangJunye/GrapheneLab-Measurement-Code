@@ -11,6 +11,8 @@ This file contains some utilities to create a socket server, handler and client
 import asyncore
 import socket
 import logging
+logging.basicConfig(filename='server_debug.log', level=logging.DEBUG)
+
 
 class SockServer(asyncore.dispatcher):
 
