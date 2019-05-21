@@ -8,7 +8,6 @@ import numpy as np
 import utils.socket_subs as socket_subs
 import utils.visa_subs as visa_subs
 
-
 class MControl:
 	"""
 	Initialization call, initialize visas for the Mercury IPS and perform some startup
