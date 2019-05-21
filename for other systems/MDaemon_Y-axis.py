@@ -24,17 +24,21 @@ last edited : Apr 2019
 Changes in v2
 
 1) Higher magnetic field resolution. Line 321 & 326
-2) Replace visa.ask to visa.query. ask is depreciated and will be removed in PyVisa 1.10
+2) Replace visa.ask to visa.query. Ask is depreciated and will be removed in PyVisa 1.10
 
 Changes in v3
-1) Add timeout to 200s
-	
+1) Higher magnetic field resolution. Line 321 & 326 back to same as v1
+
+Changes in Yaxis
+1) Replace GRPZ to GRPY
+2) Change self.Rate & self.MaxRate to 5.5625 A/min
 """
 
-import utils.socket_utils as SocketUtils
+import utils.socket_subs as SocketUtils
 import logging
 import visa as visa
 import utils.visa_subs as VisaSubs
+import string as string
 import re as re
 import time
 import numpy as np
@@ -58,8 +62,9 @@ class MControl():
 	def __init__(self):
 		# Connect visa to the magnet
 		self.Visa = VisaSubs.InitializeSerial("ASRL11::INSTR")
-		# Add Timeout to 200s
-		self.Visa.timeout=200000
+		# Set instrument timeout to 20s to allow Y axis to respond
+		self.Visa.timeout=20000
+		
 		# Open the socket
 		address = ('localhost',18861)
 		self.Server = SocketUtils.SockServer(address)
@@ -70,8 +75,8 @@ class MControl():
 		self.Heater = False
 		self.MagnetCurrent = 0.0
 		self.AToB = 0.0
-		self.Rate = 2.19
-		self.MaxRate = 2.19
+		self.Rate = 5.5625 # 100 mT/min
+		self.MaxRate = 5.5625 # 100 mT/min
 		self.CurrentLimit = 0.0
 		
 		# Set up the lock for the switch heater
@@ -97,11 +102,11 @@ class MControl():
 	###########################################
 	
 	def MagnetReadNumeric(self, Command):
-		# Form the query string (Now only for GRPZ)
-		Query = "".join(("READ:DEV:GRPZ:PSU:SIG:",Command))
+		# Form the query string (Now only for GRPY)
+		Query = "".join(("READ:DEV:GRPY:PSU:SIG:",Command))
 		Reply = self.Visa.query(Query)
 		# Find the useful part of the response
-		Answer = str.rsplit(Reply,":",1)[1]
+		Answer = string.rsplit(Reply,":",1)[1]
 		
 		# Some regex to get rid of the appended units
 		Answer = re.split("[a-zA-Z]",Answer,1)[0]
@@ -115,16 +120,16 @@ class MControl():
 	
 	def MagnetReadField(self):
 		
-		# Form the query string (Now only for GRPZ)
+		# Form the query string (Now only for GRPY)
 		if self.Heater:
-			Query = "READ:DEV:GRPZ:PSU:SIG:FLD"
+			Query = "READ:DEV:GRPY:PSU:SIG:FLD"
 		else:
 			# For some reason the command PFLD doesn't work
-			Query = "READ:DEV:GRPZ:PSU:SIG:PCUR"
+			Query = "READ:DEV:GRPY:PSU:SIG:PCUR"
 		
 		Reply = self.Visa.query(Query)
 		# Find the useful part of the response
-		Answer = str.rsplit(Reply,":",1)[1]
+		Answer = string.rsplit(Reply,":",1)[1]
 		# Some regex to get rid of the appended units
 		Answer = re.split("[a-zA-Z]",Answer,1)[0]
 		Answer = float(Answer)
@@ -144,11 +149,11 @@ class MControl():
 	########################################
 	
 	def MagnetReadConfNumeric(self, Command):
-		# Form the query string (Now only for GRPZ)
-		Query = "".join(("READ:DEV:GRPZ:PSU:",Command))
+		# Form the query string (Now only for GRPY)
+		Query = "".join(("READ:DEV:GRPY:PSU:",Command))
 		Reply = self.Visa.query(Query)
 		# Find the useful part of the response
-		Answer = str.rsplit(Reply,":",1)[1]
+		Answer = string.rsplit(Reply,":",1)[1]
 		
 		# Some regex to get rid of the appended units
 		Answer = re.split("[a-zA-Z]",Answer,1)[0]
@@ -161,11 +166,11 @@ class MControl():
 	#############################################
 	
 	def MagnetSetNumeric(self, Command, Value):
-		# Form the query string (Now only for GRPZ)
-		writeCmd = "SET:DEV:GRPZ:PSU:SIG:%s:%.4f" % (Command, Value)
+		# Form the query string (Now only for GRPY)
+		writeCmd = "SET:DEV:GRPY:PSU:SIG:%s:%.4f" % (Command, Value)
 		Reply = self.Visa.query(writeCmd)
 		
-		Answer = str.rsplit(Reply,":",1)[1]
+		Answer = string.rsplit(Reply,":",1)[1]
 		if Answer == "VALID":
 			Valid = 1
 		elif Answer == "INVALID":
@@ -180,8 +185,8 @@ class MControl():
 	###########################################################
 	
 	def MagnetReadHeater(self):
-		Reply = self.Visa.query("READ:DEV:GRPZ:PSU:SIG:SWHT")
-		Answer = str.rsplit(Reply,":",1)[1]
+		Reply = self.Visa.query("READ:DEV:GRPY:PSU:SIG:SWHT")
+		Answer = string.rsplit(Reply,":",1)[1]
 		if Answer == "ON":
 			Valid = 1
 			self.Heater = True
@@ -199,21 +204,21 @@ class MControl():
 	
 	def MagnetSetHeater(self, State):
 	   
-		self.MagnetSetAction("HOLD")
+	self.MagnetSetAction("HOLD")
 		HeaterBefore = self.Heater
 		if State:
-			Reply = self.Visa.query("SET:DEV:GRPZ:PSU:SIG:SWHT:ON")
+			Reply = self.Visa.query("SET:DEV:GRPY:PSU:SIG:SWHT:ON")
 		else:
-			Reply = self.Visa.query("SET:DEV:GRPZ:PSU:SIG:SWHT:OFF")
+			Reply = self.Visa.query("SET:DEV:GRPY:PSU:SIG:SWHT:OFF")
 			
-		Answer = str.rsplit(Reply,":",1)[1]
+		Answer = string.rsplit(Reply,":",1)[1]
 		if Answer == "VALID":
 			Valid = 1
 		elif Answer == "INVALID":
 			Valid = 0
-		time.sleep(5.)
+	time.sleep(5.)
 		self.MagnetReadHeater()
-		HeaterAfter = self.Heater
+	HeaterAfter = self.Heater
 		if HeaterAfter != HeaterBefore:
 			print("Heater switched ... locking for 2 minutes...")
 			self.Lock = True
@@ -227,8 +232,8 @@ class MControl():
 	
 	def MagnetReadAction(self):
 		
-		Reply = self.Visa.query("READ:DEV:GRPZ:PSU:ACTN")
-		Answer = str.rsplit(Reply,":",1)[1]
+		Reply = self.Visa.query("READ:DEV:GRPY:PSU:ACTN")
+		Answer = string.rsplit(Reply,":",1)[1]
 		return Answer
 	
 	########################################################
@@ -237,9 +242,9 @@ class MControl():
 	
 	def MagnetSetAction(self, Command):
 		
-		Reply = self.Visa.query("".join(("SET:DEV:GRPZ:PSU:ACTN:",Command)))	
+		Reply = self.Visa.query("".join(("SET:DEV:GRPY:PSU:ACTN:",Command)))	
 		
-		Answer = str.rsplit(Reply,":",1)[1]
+		Answer = string.rsplit(Reply,":",1)[1]
 		if Answer == "VALID":
 			Valid = 1
 		elif Answer == "INVALID":
@@ -285,7 +290,7 @@ class MControl():
 		self.MagnetReadField()
 		self.CurrentLimit = self.MagnetReadConfNumeric("CLIM")
 		self.TargetField = self.Field
-		self.TargetHeater = self.Heater
+	self.TargetHeater = self.Heater
 		
 		if self.Heater:
 			HeaterString = "ON"
@@ -323,12 +328,12 @@ class MControl():
 	
 	def QueryAtTarget(self):
 		if abs(self.TargetField) < 1.0:
-			if abs(self.Field-self.TargetField) < 0.0003:
-				AtTarget = True
-			else:
-				AtTarget = False
+		if abs(self.Field-self.TargetField) < 0.004:
+			AtTarget = True
 		else:
-			if (abs((self.Field-self.TargetField)/self.TargetField) <= 0.00015):
+		AtTarget = False
+		else:
+			if (abs((self.Field-self.TargetField)/self.TargetField) <= 0.0035):
 				AtTarget = True
 			else:
 				AtTarget = False
@@ -356,7 +361,7 @@ class MControl():
 			# Set message has form "SET TargetField TargetHeater"
 			try:
 				NewField = float(Msg[1])
-				NewHeater = int(Msg[2])
+		NewHeater = int(Msg[2])
 				NewHeater = bool(NewHeater)
 				if (NewField != self.TargetField) or (NewHeater != self.TargetHeater):
 					self.TargetField = NewField
@@ -373,7 +378,7 @@ class MControl():
 			#print Msg
 			try:
 				NewField = float(Msg[1])
-				NewHeater = int(Msg[3])
+		NewHeater = int(Msg[3])
 				NewHeater = bool(NewHeater)
 				self.Rate = float(Msg[2]) * self.AToB
 				if (NewField != self.TargetField) or (NewHeater != self.TargetHeater):
@@ -450,7 +455,7 @@ if __name__ == '__main__':
 				else:
 					# The heater is on --> so go to the target
 					Action = control.MagnetReadAction()
-					SetCurrent = control.MagnetReadNumeric("CSET")
+			SetCurrent = control.MagnetReadNumeric("CSET")
 					if Action != "RTOS" or abs(SetCurrent - control.TargetField * control.AToB) > 0.005:
 						# The source is not ramping --> Ramp it to the magnet current so it can be switched
 						TargetCurrent = control.TargetField * control.AToB

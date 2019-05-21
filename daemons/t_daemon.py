@@ -22,7 +22,7 @@ from datetime import datetime
 import numpy as np
 
 import utils.pid_control as pid_control
-import utils.socket_utils as socket_utils
+import utils.socket_subs as socket_subs
 import utils.visa_subs as visa_subs
 
 
@@ -41,7 +41,7 @@ class TControl:
 		self.tcs_visa = visa_subs.initialize_serial("ASRL6::INSTR", idn="ID?")
 
 		address = ('localhost', 18871)
-		self.server = socket_utils.SockServer(address)
+		self.server = socket_subs.SockServer(address)
 
 		self.resistance = 1.0
 		self.temperature = 0.0

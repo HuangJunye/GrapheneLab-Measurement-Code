@@ -1,15 +1,10 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-
-"""
-
-Sub programs for doing the measurements
+"""Sub programs for doing the measurements
 
 author : Eoin O'Farrell
 email : phyoec@nus.edu.sg
 last edited : July 2013
 
-Explantion:
+Explanation:
 
 	There are 3 variables in our instrument:
 	1 Temperature
@@ -40,13 +35,13 @@ import time
 
 import numpy as np
 
-import utils.socket_utils as socket_utils
+import utils.socket_subs as socket_subs
 
 
 def initialize_sockets():
 	# Bind to the temperature and magnet sockets and try to read them
-	t_client = socket_utils.SockClient('localhost', 18871)
-	m_client = socket_utils.SockClient('localhost', 18861)
+	t_client = socket_subs.SockClient('localhost', 18871)
+	m_client = socket_subs.SockClient('localhost', 18861)
 	time.sleep(4)
 	m_socket = [0.0, 0]
 	t_socket = [0.0, 0]

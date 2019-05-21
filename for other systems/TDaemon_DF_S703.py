@@ -24,7 +24,7 @@ ToDo:
 
 """
 
-import utils.socket_utils as SocketUtils
+import utils.socket_subs as SocketUtils
 import logging
 import visa as visa
 import utils.visa_subs as VisaSubs
