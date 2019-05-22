@@ -36,7 +36,7 @@ class SockServer(asyncore.dispatcher):
         client_info = self.accept()
         self.logger.debug('handle_accept() -> %s', client_info[1])
         handler = SockHandler(client_info[0], self)
-        print("Got listener!")
+        print('Got listener!')
         if len(self.handlers) > 2:
             self.remove_channel(self.handlers[-1])
         self.handlers.append(handler)
@@ -45,7 +45,7 @@ class SockServer(asyncore.dispatcher):
     def remove_channel(self, sock):
         if sock in self.handlers:
             self.handlers.remove(sock)
-            print("Listener disconnect!")
+            print('Listener disconnect!')
 
     def handle_close(self):
         self.logger.debug('handle_close()')

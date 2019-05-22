@@ -7,13 +7,13 @@ from daemon.TControl import TControl
 
 # calibration parameters for temperature sensors
 calibrations = {
-    "SO703": [7318.782092, -13274.53584, 10276.68481, -4398.202411, 1123.561007, -171.3095557, 14.43456504, -0.518534965],
-    "SO914": [
+    'SO703': [7318.782092, -13274.53584, 10276.68481, -4398.202411, 1123.561007, -171.3095557, 14.43456504, -0.518534965],
+    'SO914': [
         5795.148097375, -11068.032226486, 9072.821104899, -4133.466851312,
         1129.955799406, -185.318021359, 16.881907269, -0.658939155
     ],
-    "MATS56": [19.68045382, -20.19660902, 10.13318296, -2.742724207, 0.385556989, -0.022178276],
-    "CERNOX": [4.62153, -1.17709, -0.222229, -2.3114e-11]
+    'MATS56': [19.68045382, -20.19660902, 10.13318296, -2.742724207, 0.385556989, -0.022178276],
+    'CERNOX': [4.62153, -1.17709, -0.222229, -2.3114e-11]
 }
 
 
@@ -24,7 +24,7 @@ if __name__ == '__main__':
     control = TControl()
 
     control.set_pico_channel(5)  # ch5 for CERNOX. Do not use below 1K
-    control.sensor = "CERNOX"
+    control.sensor = 'CERNOX'
 
     # Main loop
     control.read_tcs()
@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
         # Push the reading to clients
         for j in control.server.handlers:
-            j.to_send = f"{control.temperature:.3f} {control.status_msg:d}".encode()
+            j.to_send = f'{control.temperature:.3f} {control.status_msg:d}'.encode()
             socket_msg = j.received_data
             if socket_msg:
                 control.read_msg(socket_msg)
