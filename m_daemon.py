@@ -298,7 +298,7 @@ class MControl:
 		1. "SET" go to set point
 		2. "SWP" sweep from the current field to a target
 		"""
-
+		msg = msg.decode()  # change in python 3
 		msg = msg.split(" ")
 		if msg[0] == "SET":
 			# Set message has form "SET target_field target_heater"
@@ -354,7 +354,7 @@ if __name__ == '__main__':
 
 		# Push the reading to clients
 		for j in control.server.handlers:
-			j.to_send = ",%.5f %d" % (control.field, control.ready)
+			j.to_send = f",{control.field:.5f} {control.ready:d}".encode()
 			socket_msg = j.received_data
 			if socket_msg and socket_msg != "-":
 				control.read_msg(socket_msg)

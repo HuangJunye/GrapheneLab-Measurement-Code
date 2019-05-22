@@ -181,6 +181,8 @@ class TControl:
 	# SET ...  -  set probe the temperature
 	# SWP ...  -  sweep the probe temperature
 	def read_msg(self, msg):
+
+		msg = msg.decode()  # change in python 3
 		msg = msg.split(" ")
 
 		if msg[0] == "SET":
@@ -334,7 +336,7 @@ if __name__ == '__main__':
 
 		# Push the reading to clients
 		for j in control.server.handlers:
-			j.to_send = ",%.3f %d" % (control.temperature, control.status_msg)
+			j.to_send = f"{control.temperature:.3f} {control.status_msg:d}".encode()
 			socket_msg = j.received_data
 			if socket_msg:
 				control.read_msg(socket_msg)

@@ -1,3 +1,6 @@
+
+
+
 """Sub programs for operation of the PicoWatt and Leiden TCS to control temperature
 
 author : Eoin O'Farrell
@@ -52,7 +55,7 @@ class SockServer(asyncore.dispatcher):
 
 class SockHandler(asyncore.dispatcher):
 
-	def __init__(self, sock, server, chunk_size=1024):
+	def __init__(self, sock, server, chunk_size=256):
 		self.chunk_size = chunk_size
 		self.logger = logging.getLogger('EchoHandler%s' % str(sock.getsockname()))
 		asyncore.dispatcher.__init__(self, sock=sock)
@@ -88,7 +91,7 @@ class SockHandler(asyncore.dispatcher):
 
 class SockClient(asyncore.dispatcher):
 
-	def __init__(self, host, port, chunk_size=1024):
+	def __init__(self, host, port, chunk_size=256):
 		# self.message = message
 		self.to_send = ""
 		self.received_data = ""
@@ -111,7 +114,6 @@ class SockClient(asyncore.dispatcher):
 		return bool(self.to_send)
 
 	def handle_write(self):
-		self.logger.debug('handle_write() -> (%d) "%s"', sent, self.to_send[:sent])
 		if len(self.to_send) > self.chunk_size:
 			# if the buffer is too long bin some
 			sent = self.send(self.to_send[-self.chunk_size:])	
@@ -119,8 +121,9 @@ class SockClient(asyncore.dispatcher):
 		else:
 			sent = self.send(self.to_send[:self.chunk_size])
 			self.to_send = self.to_send[sent:]
+		self.logger.debug('handle_write() -> (%d) "%s"', sent, self.to_send[:sent])
 
 	def handle_read(self):
 		data = self.recv(self.chunk_size)
-		# self.logger.debug('handle_read() -> (%d) "%s"', len(data), data)
+		self.logger.debug('handle_read() -> (%d) "%s"', len(data), data)
 		self.received_data = data
