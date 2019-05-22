@@ -7,10 +7,10 @@ class Instrument:
     description
     """
 
-    def __init__(self, address):
+    def __init__(self, mode="gpib", address=0):
         self.name = "Instrument Name"
         self.address = address
-        self.visa = visa_subs.initialize_gpib(address=address, board=0)
+        self.visa = visa_subs.initialize(mode=mode, address=address)
 
     def description(self):
         """ Print a description string to data file"""

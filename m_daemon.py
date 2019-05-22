@@ -8,7 +8,7 @@ from instrument.oxford.mercury_ips import MercuryiPS
 if __name__ == '__main__':
 	
 	# Initialize a daemon instance and runs startup codes
-	magnet = MercuryiPS(11)
+	magnet = MercuryiPS(address=11)
 	magnet.on_start_up()
 	# A flag to control the source behavior
 	source_flag = False

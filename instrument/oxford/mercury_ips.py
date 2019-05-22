@@ -5,17 +5,14 @@ from datetime import datetime
 import numpy as np
 
 import utils.socket_subs as socket_subs
-import utils.visa_subs as visa_subs
 from ..generic_instrument import Instrument
 
 
 class MercuryiPS(Instrument):
     """Instrument driver for Oxford Mercury iPS magnet power supply"""
     def __init__(self, address):
-        super().__init__(address)
+        super().__init__(mode="serial", address=address)
         self.name = "Mercury iPS"
-        self.address = address
-        self.visa = visa_subs.initialize_serial(address=address)
         self.visa.timeout = 200000
 
         # Open the socket
