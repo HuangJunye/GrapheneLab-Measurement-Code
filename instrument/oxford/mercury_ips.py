@@ -10,6 +10,7 @@ from ..generic_instrument import Instrument
 
 class MercuryiPS(Instrument):
     """Instrument driver for Oxford Mercury iPS magnet power supply"""
+
     def __init__(self, address):
         super().__init__(mode="serial", address=address)
         self.name = "Mercury iPS"
