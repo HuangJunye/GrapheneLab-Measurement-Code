@@ -117,7 +117,7 @@ class Keithley(Instrument):
 
     def switch_output(self):
         self.output = not self.output
-        self.visa.write(f":OUTP:STAT {self.output}")
+        self.visa.write(f":OUTP:STAT {self.output:d}")
         pass
 
     def ramp(self, finish_value):

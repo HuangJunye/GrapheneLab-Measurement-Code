@@ -55,6 +55,10 @@ def socket_read(client, old_socket=[]):
 	# Read the socket and parse the reply, the reply has 2 parts the message and the status
 	asyncore.loop(count=1, timeout=0.001)
 	socket_string = client.received_data
+	if not isinstance(socket_string, str):
+	# when t_daemon or m_daemon is not running, client.received_data = "", which is a string instead of bytes
+	# when daemons are running, client.recieved_data if bytes, which needs to be decoded.
+		socket_string = socket_string.decode()
 	socket = old_socket
 	if socket_string:
 		socket_string = socket_string.split(",")[-1]
@@ -75,10 +79,10 @@ def socket_read(client, old_socket=[]):
 
 
 def socket_write(client, msg):
-	client.to_send = msg
+	client.to_send = msg.encode()
 	asyncore.loop(count=1, timeout=0.001)
 	time.sleep(2)
-	client.to_send = "-"
+	client.to_send = "-".encode()
 	asyncore.loop(count=1, timeout=0.001)
 
 
