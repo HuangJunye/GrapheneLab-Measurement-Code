@@ -10,7 +10,7 @@ class Instrument:
     def __init__(self, address):
         self.name = "Instrument Name"
         self.address = address
-        self.visa = visa_subs.initialize_gpib(address, 0)
+        self.visa = visa_subs.initialize_gpib(address=address, board=0)
 
     def description(self):
         """ Print a description string to data file"""

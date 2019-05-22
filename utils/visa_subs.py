@@ -46,11 +46,12 @@ def initialize_gpib(address, board, query_id=True, read_termination="LF", **kwar
 	return gpib_visa
 
 
-def initialize_serial(name, idn="*IDN?", read_termination="LF", **kwargs):
+def initialize_serial(address, idn="*IDN?", read_termination="LF", **kwargs):
 	""" Initialize Serial devices using PyVisa """
 
+	serial_name = f"ASRL{address}::INSTR"
 	try:
-		serial_visa = rm.open_resource(name)
+		serial_visa = rm.open_resource(serial_name)
 		if read_termination == "LF":
 			serial_visa.read_termination = "\n"
 		elif read_termination == "CR":

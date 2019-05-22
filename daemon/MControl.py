@@ -1,4 +1,3 @@
-import asyncore
 import re as re
 import time
 from datetime import datetime
@@ -27,7 +26,7 @@ class MControl:
 
     def __init__(self):
         # Connect visa to the magnet
-        self.visa = visa_subs.initialize_serial("ASRL11::INSTR")
+        self.visa = visa_subs.initialize_serial(address=11)
         # Add Timeout to 200s
         self.visa.timeout = 200000
         # Open the socket

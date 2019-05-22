@@ -17,11 +17,11 @@ class TControl:
 
     def __init__(self):
 
-        self.pico_visa = visa_subs.initialize_gpib(20, 0, query_delay="0.04")
+        self.pico_visa = visa_subs.initialize_gpib(address=20, board=0, query_delay="0.04")
         self.pico_visa.write("HDR0")
         self.pico_visa.write("ARN 1")
         self.pico_visa.write("REM 1")
-        self.tcs_visa = visa_subs.initialize_serial("ASRL6::INSTR", idn="ID?")
+        self.tcs_visa = visa_subs.initialize_serial(address=6, idn="ID?")
 
         address = ('localhost', 18871)
         self.server = socket_subs.SockServer(address)
