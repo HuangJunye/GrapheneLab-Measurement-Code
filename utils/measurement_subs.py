@@ -56,8 +56,8 @@ def socket_read(client, old_socket=[]):
 	asyncore.loop(count=1, timeout=0.001)
 	socket_string = client.received_data
 	if not isinstance(socket_string, str):
-	# when t_daemon or m_daemon is not running, client.received_data = "", which is a string instead of bytes
-	# when daemons are running, client.recieved_data if bytes, which needs to be decoded.
+		# when t_daemon or m_daemon is not running, client.received_data = "", which is a string instead of bytes
+		# when daemons are running, client.received_data is bytes, which needs to be decoded.
 		socket_string = socket_string.decode()
 	socket = old_socket
 	if socket_string:
