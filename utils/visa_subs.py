@@ -20,6 +20,15 @@ import visa as visa
 rm = visa.ResourceManager()
 
 
+def initialize(mode, address):
+	if mode == "gpib":
+		initialize_gpib(address=address, board=0)
+	elif mode == "serial":
+		initialize_serial(address=address)
+	else:
+		raise Exception("You can only initialize 'gpib' or 'serial'.")
+
+
 def initialize_gpib(address, board, query_id=True, read_termination="LF", **kwargs):
 	""" Initalize GPIB devices using PyVisa """
 
