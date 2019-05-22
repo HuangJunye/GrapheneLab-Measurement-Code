@@ -22,9 +22,9 @@ rm = visa.ResourceManager()
 
 def initialize(mode, address):
 	if mode == "gpib":
-		initialize_gpib(address=address, board=0)
+		return initialize_gpib(address=address, board=0)
 	elif mode == "serial":
-		initialize_serial(address=address)
+		return initialize_serial(address=address)
 	else:
 		raise Exception("You can only initialize 'gpib' or 'serial'.")
 
