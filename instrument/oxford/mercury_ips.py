@@ -4,6 +4,7 @@ from datetime import datetime
 
 import numpy as np
 
+import utils.socket_subs as socket_subs
 import utils.visa_subs as visa_subs
 from ..generic_instrument import Instrument
 
@@ -16,6 +17,10 @@ class MercuryiPS(Instrument):
         self.address = address
         self.visa = visa_subs.initialize_serial(address=address)
         self.visa.timeout = 200000
+
+        # Open the socket
+        address = ('localhost', 18861)
+        self.server = socket_subs.SockServer(address)
 
         # Define some important parameters for the magnet
         self.field = 0.0
@@ -38,6 +43,31 @@ class MercuryiPS(Instrument):
 
         self.sweep_now = False
         self.ready = 1  # ready message which is also broadcast to the listener
+
+    def on_start_up(self):
+        """On start get parameters"""
+
+        # Check the heater
+        self.read_heater()
+        self.a_to_b = self.read_conf_numeric("ATOB")
+
+        # Take care of the field source current and magnet current
+        self.read_field()
+        self.current_limit = self.read_conf_numeric("CLIM")
+        self.target_field = self.field
+        self.target_heater = self.heater
+
+        if self.heater:
+            heater_string = "ON"
+        else:
+            heater_string = "OFF"
+
+        print(
+            f"Connected to magnet... heater is {heater_string}, field is {self.field:.4f}, "
+            f"Magnet conversion = {self.a_to_b:.4f} A/T, Maximum current = {self.current_limit:.3f}"
+        )
+
+        return
 
     def read_numeric(self, command):
         """Function to read one of the numeric signals"""
@@ -203,31 +233,6 @@ class MercuryiPS(Instrument):
             switchable = False
 
         return switchable
-
-    def on_start_up(self):
-        """On start get parameters"""
-
-        # Check the heater
-        self.read_heater()
-        self.a_to_b = self.read_conf_numeric("ATOB")
-
-        # Take care of the field source current and magnet current
-        self.read_field()
-        self.current_limit = self.read_conf_numeric("CLIM")
-        self.target_field = self.field
-        self.target_heater = self.heater
-
-        if self.heater:
-            heater_string = "ON"
-        else:
-            heater_string = "OFF"
-
-        print(
-            f"Connected to magnet... heater is {heater_string}, field is {self.field:.4f}, "
-            f"Magnet conversion = {self.a_to_b:.4f} A/T, Maximum current = {self.current_limit:.3f}"
-        )
-
-        return
 
     def set_source(self, new_set):
         """Set the leads current, ignore the switch heater state, busy etc"""
