@@ -18,7 +18,7 @@ def do_device_sweep(
         timeout=-1, wait=0.5,
         return_data=False, make_plot=True,
         socket_data_number=2,  # 5 for 9T, 2 for Dilution fridge
-        comment="No comment!", network_dir="Z:\\DATA"
+        comment='No comment!', network_dir='Z:\\DATA'
 ):
     """Device sweep"""
 
@@ -34,13 +34,13 @@ def do_device_sweep(
 
     # Go to the set temperature and magnetic field and finish in persistent mode
     if t_set > 0:
-        msg = " ".join(("SET", "%.2f" % t_set))
+        msg = ' '.join(('SET', '%.2f' % t_set))
         measurement_subs.socket_write(t_client, msg)
-        print("Wrote message to temperature socket \"%s\"" % msg)
+        print('Wrote message to temperature socket "%s"' % msg)
     if not ignore_magnet:
-        msg = " ".join(("SET", "%.4f" % b_set, "%d" % int(not persist)))
+        msg = ' '.join(('SET', '%.4f' % b_set, '%d' % int(not persist)))
         measurement_subs.socket_write(m_client, msg)
-        print("Wrote message to Magnet socket \"%s\"" % msg)
+        print('Wrote message to Magnet socket "%s"' % msg)
     time.sleep(5)
 
     # give precedence to the magnet and wait for the timeout
@@ -48,7 +48,7 @@ def do_device_sweep(
     m_socket = measurement_subs.socket_read(m_client, m_socket)
     if not ignore_magnet:
         while m_socket[1] != 1:
-            print("Waiting for magnet!")
+            print('Waiting for magnet!')
             time.sleep(15)
             t_socket = measurement_subs.socket_read(t_client, t_socket)
             m_socket = measurement_subs.socket_read(m_client, m_socket)
@@ -58,14 +58,14 @@ def do_device_sweep(
     while (t_socket[1] != 1) and (remaining > 0):
         now_time = datetime.now()
         remaining = timeout * 60.0 - float((now_time - set_time).seconds)
-        print("Waiting for temperature ... time remaining = %.2f minutes" % (remaining / 60.0))
+        print('Waiting for temperature ... time remaining = %.2f minutes' % (remaining / 60.0))
         t_socket = measurement_subs.socket_read(t_client, t_socket)
         m_socket = measurement_subs.socket_read(m_client, m_socket)
         time.sleep(15)
 
     # Setup L plot windows
     if make_plot:
-        graph_window = rpg.GraphicsWindow(title="Device sweep...")
+        graph_window = rpg.GraphicsWindow(title='Device sweep...')
         graph_window.resize(500, 150 * num_of_inst)
         plot = [None] * num_of_inst
         curve = [None] * num_of_inst
@@ -81,14 +81,14 @@ def do_device_sweep(
     if set_inst:
         for set_val in [pre_value, set_value]:
             if set_val:
-                "Pre and set ramps"
+                'Pre and set ramps'
                 if len(set_inst) != len(set_val):
                     if len(set_val) > len(set_inst):
                         set_val = set_val[0:len(set_inst)]
                     else:
                         set_val = set_val + [0] * (len(set_inst) - len(set_val))
                 for i, v in enumerate(set_inst):
-                    print("Ramping %s to %.2e" % (v.name, set_val[i]))
+                    print('Ramping %s to %.2e' % (v.name, set_val[i]))
                     v.ramp(set_val[i])
 
     if sweep_start != 0:
@@ -102,17 +102,17 @@ def do_device_sweep(
     sweep_inst.read_data()
 
     if wait >= 0.0:
-        print("Waiting %.2f minute!" % wait)
+        print('Waiting %.2f minute!' % wait)
         wait_time = datetime.now()
         remaining = wait * 60.0
         while remaining > 0:
             now_time = datetime.now()
             remaining = wait * 60.0 - float((now_time - wait_time).seconds)
-            print("Waiting ... time remaining = %.2f minutes" % (remaining / 60.0))
+            print('Waiting ... time remaining = %.2f minutes' % (remaining / 60.0))
             t_socket = measurement_subs.socket_read(t_client, t_socket)
             m_socket = measurement_subs.socket_read(m_client, m_socket)
             time.sleep(15)
-    print("Starting measurement!")
+    print('Starting measurement!')
 
     start_time = datetime.now()
 
@@ -160,11 +160,11 @@ def do_device_sweep(
                 to_plot[j + 1] = data_vector[-1, start_column[j] + read_inst[j].data_column]
 
             # Pass data to the plots
-            plot_data.extend(to_plot, _callSync="off")
+            plot_data.extend(to_plot, _callSync='off')
         if make_plot:
             for j in range(num_of_inst):
                 curve[j].setData(x=plot_data[0::(num_of_inst + 1)], y=plot_data[j + 1::(num_of_inst + 1)],
-                                 _callSync="off")
+                                 _callSync='off')
 
     sweep_inst.ramp(sweep_finish)
 
@@ -174,7 +174,7 @@ def do_device_sweep(
 
     if set_inst:
         if len(finish_value) != len(set_inst):
-            print("Warning: len(set_inst) != len(finish_value)")
+            print('Warning: len(set_inst) != len(finish_value)')
             # print set_inst, finish_value
             if len(finish_value) > len(set_inst):
                 finish_value = finish_value[0:len(set_inst)]
@@ -182,7 +182,7 @@ def do_device_sweep(
                 finish_value = finish_value + set_value[len(finish_value):len(set_inst)]
         # Final ramps
         for i, v in enumerate(set_inst):
-            print("Ramping %s to %.2e" % (v.name, finish_value[i]))
+            print('Ramping %s to %.2e' % (v.name, finish_value[i]))
             v.ramp(finish_value[i])
 
     if return_data:

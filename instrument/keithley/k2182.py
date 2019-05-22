@@ -6,7 +6,7 @@ from .sourcemeter import Keithley
 class K2182(Keithley):
     def __init__(self, address):
         super().__init__(address)
-        self.name = "Keithley 2182A"
+        self.name = 'Keithley 2182A'
         
         # Special variables for 2182
         self.channel = 1
@@ -22,12 +22,12 @@ class K2182(Keithley):
         """Print a description string to data file"""
 
         description_string = (
-            f"{super().description()}, "
-            f"sense={self.sense}, "
-            f"sense range={self.sense_range}, "
-            f"relative={self.relative}, "
-            f"relative value={self.relative_value}, "
-            "\n"
+            f'{super().description()}, '
+            f'sense={self.sense}, '
+            f'sense range={self.sense_range}, '
+            f'relative={self.relative}, '
+            f'relative value={self.relative_value}, '
+            '\n'
         )
         return description_string
 
@@ -36,10 +36,10 @@ class K2182(Keithley):
             d_filter=True, count=5, sense_range=1., auto_sense_range=False
     ):
 
-        self.column_names = "V (V)"
+        self.column_names = 'V (V)'
         self.data = [0.0]
         self.data_column = 0
-        self.sense = "VOLT"
+        self.sense = 'VOLT'
         
         # Special variables for 2182
         self.channel = channel
@@ -51,51 +51,51 @@ class K2182(Keithley):
         self.auto_sense_range = auto_sense_range
 
         # A bunch of commands to configure the 2182
-        self.visa.write("*RST")
+        self.visa.write('*RST')
         time.sleep(.1)
-        self.visa.write(":SENS:FUNC \'VOLT\'")
-        self.visa.write(":SENS:CHAN %d" % channel)
+        self.visa.write(':SENS:FUNC \'VOLT\'')
+        self.visa.write(':SENS:CHAN %d' % channel)
         
         if auto_sense_range:
             self.auto_sense_range = True
-            self.visa.write("".join((":SENS:", self.sense, ":RANG:AUTO 1")))
+            self.visa.write("".join((':SENS:', self.sense, ':RANG:AUTO 1')))
         else:
             self.sense_range = sense_range
             self.auto_sense_range = False
-            self.visa.write("".join((":SENS:", self.sense, ":RANG ", "%.2e" % sense_range)))
+            self.visa.write("".join((':SENS:', self.sense, ':RANG ', '%.2e' % sense_range)))
 
         if a_cal:
-            self.visa.write(":CAL:UNPR:ACAL:INIT")
+            self.visa.write(':CAL:UNPR:ACAL:INIT')
             time.sleep(1.0)
-            reply = self.visa.query(":CAL:UNPR:ACAL:TEMP?")
+            reply = self.visa.query(':CAL:UNPR:ACAL:TEMP?')
             time.sleep(10.)
-            self.visa.write(":CAL:UNPR:ACAL:DONE")
+            self.visa.write(':CAL:UNPR:ACAL:DONE')
 
         # Set some filters
         if a_filter:
-            self.visa.write(":SENS:VOLT:LPAS 1")
+            self.visa.write(':SENS:VOLT:LPAS 1')
         else:
-            self.visa.write(":SENS:VOLT:LPAS 0")
+            self.visa.write(':SENS:VOLT:LPAS 0')
 
         if d_filter:
-            self.visa.write(":SENS:VOLT:DFIL 1")
-            self.visa.write(":SENS:VOLT:DFIL:COUN %d" % count)
+            self.visa.write(':SENS:VOLT:DFIL 1')
+            self.visa.write(':SENS:VOLT:DFIL:COUN %d' % count)
         else:
-            self.visa.write(":SENS:VOLT:DFIL 0")
+            self.visa.write(':SENS:VOLT:DFIL 0')
 
-        self.visa.query(":READ?")
+        self.visa.query(':READ?')
 
-        self.visa.write(":SENS:VOLT:REF:STAT 0")
+        self.visa.write(':SENS:VOLT:REF:STAT 0')
         if relative:
-            self.visa.write(":SENS:VOLT:REF:ACQ")
-            self.visa.write(":SENS:VOLT:REF:STAT 1")
-            reply = self.visa.query(":SENS:VOLT:REF?")
+            self.visa.write(':SENS:VOLT:REF:ACQ')
+            self.visa.write(':SENS:VOLT:REF:STAT 1')
+            reply = self.visa.query(':SENS:VOLT:REF?')
             print(reply)
             self.relative_value = float(reply)
 
         pass
 
     def read_data(self):
-        reply = self.visa.query(":READ?")
+        reply = self.visa.query(':READ?')
         self.data = [float(reply)]
         pass

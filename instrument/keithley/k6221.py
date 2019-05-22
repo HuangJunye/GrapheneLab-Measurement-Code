@@ -9,20 +9,20 @@ class K6221(Keithley):
 
     def __init__(self, address):
         super().__init__(address)
-        self.name = "Keithley 6221"
+        self.name = 'Keithley 6221'
 
         # Query the output state
         self.output = False
-        reply = self.visa.query(":OUTP:STAT?")
+        reply = self.visa.query(':OUTP:STAT?')
         reply = int(reply)
         self.output = bool(reply)
 
         if self.output:
-            self.compliance = self.read_numeric(":SOUR:CURR:COMP?")
-            self.frequency = self.read_numeric(":SOUR:WAVE:FREQ?")
-            self.amplitude = self.read_numeric(":SOUR:WAVE:AMPL?")
-            self.offset = self.read_numeric(":SOUR:WAVE:OFFS?")
-            self.phase = self.read_numeric(":SOUR:WAVE:PMAR?")
+            self.compliance = self.read_numeric(':SOUR:CURR:COMP?')
+            self.frequency = self.read_numeric(':SOUR:WAVE:FREQ?')
+            self.amplitude = self.read_numeric(':SOUR:WAVE:AMPL?')
+            self.offset = self.read_numeric(':SOUR:WAVE:OFFS?')
+            self.phase = self.read_numeric(':SOUR:WAVE:PMAR?')
             self.trigger_pin = 2
         else:
             self.compliance = 0.0
@@ -31,11 +31,11 @@ class K6221(Keithley):
             self.offset = 0.0
             self.phase = 0.0  # position of the phase marker
             self.trigger_pin = 2  # pin to write the trigger
-            self.visa.write(":SOUR:CLE:IMM")
+            self.visa.write(':SOUR:CLE:IMM')
 
         self.ramp_step = 10e-9
-        self.source = "CURR"
-        self.column_names = "I (A)"
+        self.source = 'CURR'
+        self.column_names = 'I (A)'
         self.data_column = 0
         self.data = [self.amplitude]  # Amperes
 
@@ -43,11 +43,11 @@ class K6221(Keithley):
         """ Print a description string to data file"""
 
         description_string = (
-            f"{super().description()}, "
-            f"amplitude={self.amplitude}, "
-            f"frequency={self.frequency}, "
-            f"compliance={self.compliance}"
-            "\n"
+            f'{super().description()}, '
+            f'amplitude={self.amplitude}, '
+            f'frequency={self.frequency}, '
+            f'compliance={self.compliance}'
+            '\n'
         )
         return description_string
 
@@ -56,9 +56,9 @@ class K6221(Keithley):
             frequency=9.2, offset=0.0, phase=0.0
     ):
 
-        self.column_names = "I (A)"
+        self.column_names = 'I (A)'
         self.data_column = 0
-        self.source = "CURR"
+        self.source = 'CURR'
 
         # A bunch of commands to configure the 6221
         if not self.output:
@@ -67,38 +67,38 @@ class K6221(Keithley):
             self.frequency = frequency
             self.offset = offset
             self.phase = phase
-            self.visa.write("*RST")
+            self.visa.write('*RST')
             time.sleep(.1)
 
-            self.visa.write(":SOUR:WAVE:FUNC SIN")
+            self.visa.write(':SOUR:WAVE:FUNC SIN')
             if auto_sense_range:
-                self.visa.write(":SOUR:WAVE:RANG BEST")
+                self.visa.write(':SOUR:WAVE:RANG BEST')
             else:
-                self.visa.write(":SOUR:WAVE:RANG FIX")
+                self.visa.write(':SOUR:WAVE:RANG FIX')
 
-            self.visa.write(":TRIG:OLIN 4")
-            self.visa.write(f":SOUR:WAVE:PMAR:OLIN {self.trigger_pin}")
-            self.visa.write(":SOUR:WAVE:PMAR:STAT ON")
-            self.visa.write(f":SOUR:WAVE:PMAR {self.phase:.1f}")
+            self.visa.write(':TRIG:OLIN 4')
+            self.visa.write(f':SOUR:WAVE:PMAR:OLIN {self.trigger_pin}')
+            self.visa.write(':SOUR:WAVE:PMAR:STAT ON')
+            self.visa.write(f':SOUR:WAVE:PMAR {self.phase:.1f}')
 
-            self.visa.write(f":SOUR:CURR:COMP {self.compliance:.3e}")
-            self.visa.write(f":SOUR:WAVE:FREQ {self.frequency:.3e}")
-            self.visa.write(f":SOUR:WAVE:OFFS {self.offset:.3e}")
-            self.visa.write(f":SOUR:WAVE:AMPL {self.ramp_step:.3e}%")
+            self.visa.write(f':SOUR:CURR:COMP {self.compliance:.3e}')
+            self.visa.write(f':SOUR:WAVE:FREQ {self.frequency:.3e}')
+            self.visa.write(f':SOUR:WAVE:OFFS {self.offset:.3e}')
+            self.visa.write(f':SOUR:WAVE:AMPL {self.ramp_step:.3e}%')
 
         return
 
     def set_output(self, level):
-        self.visa.write(f":SOUR:WAVE:AMPL {level:.4e}")
+        self.visa.write(f':SOUR:WAVE:AMPL {level:.4e}')
         pass
 
     def switch_output(self):
         self.output = not self.output
         if self.output:
-            self.visa.write(":SOUR:WAVE:ARM")
-            self.visa.write(":SOUR:WAVE:INIT")
+            self.visa.write(':SOUR:WAVE:ARM')
+            self.visa.write(':SOUR:WAVE:INIT')
         else:
-            self.visa.write(":SOUR:WAVE:ABOR")
+            self.visa.write(':SOUR:WAVE:ABOR')
 
         pass
 

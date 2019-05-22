@@ -16,7 +16,7 @@ def device_device_2d(
         step_start=0.0, step_stop=1.0, step_step=0.1, step_finish=0.0,
         delay=0, sample=1, make_plot=False,
         timeout=-1, wait=0.0,
-        comment="No comment!", network_dir="Z:\\DATA",
+        comment='No comment!', network_dir='Z:\\DATA',
         persist=True, x_custom=[], ignore_magnet=False
 ):
     """SWEEP two device parameters
@@ -54,7 +54,7 @@ def device_device_2d(
         view_box[i].enableAutoRange()
         image_view[i] = rpg.ImageView(view=rpg.PlotItem(viewBox=view_box[i]))
         plot_2d_window[i].setCentralWidget(image_view[i])
-        plot_2d_window[i].setWindowTitle("read_inst %d" % i)
+        plot_2d_window[i].setWindowTitle('read_inst %d' % i)
         plot_2d_window[i].show()
         view_box[i].invertY(True)
         view_box[i].setAspectLocked(False)
@@ -99,7 +99,7 @@ def device_device_2d(
 
     m_client = socket_subs.SockClient('localhost', 18861)
     time.sleep(2)
-    measurement_subs.socket_write(m_client, "SET 0.0 0")
+    measurement_subs.socket_write(m_client, 'SET 0.0 0')
     time.sleep(2)
     m_client.close()
 

@@ -61,8 +61,8 @@ def socket_read(client, old_socket=[]):
         socket_string = socket_string.decode()
     socket = old_socket
     if socket_string:
-        socket_string = socket_string.split(",")[-1]
-        socket_string = socket_string.split(" ")
+        socket_string = socket_string.split(',')[-1]
+        socket_string = socket_string.split(' ')
         if len(socket_string) == 2:
             value = socket_string[:-1]
             status = socket_string[-1]
@@ -82,20 +82,20 @@ def socket_write(client, msg):
     client.to_send = msg.encode()
     asyncore.loop(count=1, timeout=0.001)
     time.sleep(2)
-    client.to_send = "-".encode()
+    client.to_send = '-'.encode()
     asyncore.loop(count=1, timeout=0.001)
 
 
 def open_csv_file(
         file_name, start_time, read_inst,
-        sweep_inst=[], set_inst=[], comment="No comment!\n",
-        network_dir="Z:\\DATA"
+        sweep_inst=[], set_inst=[], comment='No comment!\n',
+        network_dir='Z:\\DATA'
 ):
 
     # Setup the directories
     # Try to make a directory called Data in the CWD
     current_dir = os.getcwd()
-    data_dir = "".join((current_dir, "\\Data"))
+    data_dir = "".join((current_dir, '\\Data'))
     try:
         os.mkdir(data_dir)
     except OSError:
@@ -106,7 +106,7 @@ def open_csv_file(
 
     network_dir = network_dir
     dir_name = os.path.basename(current_dir)
-    net_dir = "".join((network_dir, "\\", dir_name))
+    net_dir = "".join((network_dir, '\\', dir_name))
     if not os.path.exists(net_dir):
         try:
             os.mkdir(net_dir)
@@ -116,44 +116,44 @@ def open_csv_file(
     # Try to make a file called ...-0.dat in data else ...-1.dat etc.
     i = 0
     while True:
-        file = "".join((data_dir, "\\", file_name, "-", "%d" % i, ".dat"))
+        file = "".join((data_dir, '\\', file_name, '-', '%d' % i, '.dat'))
         try:
             os.stat(file)
             i = i+1
             pass
         except OSError:
-            csv_file = open(file, "w")
+            csv_file = open(file, 'w')
             file_writer = csv.writer(csv_file, delimiter=',')
             break
 
     # Write the starttime and a description of each of the instruments
     file_writer.writerow([start_time])
 
-    column_string = "B (T), T(mK) "
+    column_string = 'B (T), T(mK) '
 
     for inst in sweep_inst:
-        csv_file.write("".join(("SWEEP: ", inst.description())))
-        column_string = "".join((column_string, ", ", inst.source))
+        csv_file.write("".join(('SWEEP: ', inst.description())))
+        column_string = "".join((column_string, ', ', inst.source))
 
     for inst in set_inst:
-        csv_file.write("".join(("SET: ", inst.description())))
-        column_string = "".join((column_string, ", ", inst.source))
+        csv_file.write("".join(('SET: ', inst.description())))
+        column_string = "".join((column_string, ', ', inst.source))
 
     for inst in read_inst:
-        csv_file.write("".join(("READ: ", inst.description())))
-        column_string = "".join((column_string, ", ", inst.column_names))
+        csv_file.write("".join(('READ: ', inst.description())))
+        column_string = "".join((column_string, ', ', inst.column_names))
 
-    column_string = "".join((column_string, "\n"))
+    column_string = "".join((column_string, '\n'))
     csv_file.write(comment)
-    csv_file.write("\n")
+    csv_file.write('\n')
     csv_file.write(column_string)
 
-    print("Writing to data file %s\n" % file)
+    print('Writing to data file %s\n' % file)
     return file_writer, file, net_dir
 
 
 def generate_device_sweep(start, stop, step, mid=[]):
-    # self.Visa.write("".join((":SOUR:",self.source,":MODE FIX")))
+    # self.Visa.write("".join((':SOUR:',self.source,':MODE FIX')))
     targets = mid
     targets.insert(0, start)
     targets.append(stop)

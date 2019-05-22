@@ -28,14 +28,14 @@ import queue
 
 class Timer:
 	def __init__(self, address):
-		self.Name = "Timer"
+		self.Name = 'Timer'
 		self.Address = address		#It is an arbitrary number
 		self.Data = [0.0]
 		self.InitTime = time.time()
 		self.RampStep = 1
 		self.Output = False
-		self.Source = "SECONDS"
-		self.ColumnNames = "Time (s)"
+		self.Source = 'SECONDS'
+		self.ColumnNames = 'Time (s)'
 		self.SourceColumn = 0
 	
 	##################################################
@@ -56,11 +56,11 @@ class Timer:
 		pass
 		
 	def SetOutput(self,Level):
-		#self.Visa.write("".join((":SOUR:",self.Source," %.4e" % Level)))
+		#self.Visa.write("".join((':SOUR:',self.Source,' %.4e' % Level)))
 		pass
 		
 	def SwitchOutput(self):
-		#self.Visa.write("".join((":OUTP:STAT ","%d" % self.Output)))
+		#self.Visa.write("".join((':OUTP:STAT ','%d' % self.Output)))
 		pass
 		
 	def Ramp(self,VFinish):
@@ -86,7 +86,7 @@ class Timer:
 	################################################
 	
 	def Description(self):
-		DescriptionString = "Timer"		
-		DescriptionString = "".join((DescriptionString,"\n"))
+		DescriptionString = 'Timer'		
+		DescriptionString = "".join((DescriptionString,'\n'))
 		return DescriptionString
 

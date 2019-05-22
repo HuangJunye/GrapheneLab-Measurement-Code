@@ -20,9 +20,9 @@ if __name__ == '__main__':
 
         # Push the reading to clients
         for j in magnet.server.handlers:
-            j.to_send = f",{magnet.field:.5f} {magnet.ready:d}".encode()
+            j.to_send = f',{magnet.field:.5f} {magnet.ready:d}'.encode()
             socket_msg = j.received_data
-            if socket_msg and socket_msg != "-":
+            if socket_msg and socket_msg != '-':
                 magnet.read_msg(socket_msg)
         asyncore.loop(count=1, timeout=0.001)
 
@@ -41,7 +41,7 @@ if __name__ == '__main__':
             if wait.seconds >= 120.0:
                 # Unlock
                 magnet.lock = False
-                print("Unlocking...")
+                print('Unlocking...')
 
         if not magnet.lock and not magnet.ready:
             """ The magnet is not locked and not ready
@@ -60,14 +60,14 @@ if __name__ == '__main__':
                     else:
                         # The switch heater is not on
                         action = magnet.read_action()
-                        if action != "RTOS":
+                        if action != 'RTOS':
                             # The source is not ramping --> Ramp it to the magnet current so it can be switched
                             magnet.set_source(magnet.magnet_current)
                 else:
                     # The heater is on --> so go to the target
                     action = magnet.read_action()
-                    set_current = magnet.read_numeric("CSET")
-                    if action != "RTOS" or abs(set_current - magnet.target_field * magnet.a_to_b) > 0.005:
+                    set_current = magnet.read_numeric('CSET')
+                    if action != 'RTOS' or abs(set_current - magnet.target_field * magnet.a_to_b) > 0.005:
                         # The source is not ramping --> Ramp it to the magnet current so it can be switched
                         target_current = magnet.target_field * magnet.a_to_b
                         magnet.set_source(target_current)
@@ -94,13 +94,13 @@ if __name__ == '__main__':
                     else:
                         # The switch heater is not on
                         action = magnet.read_action()
-                        if action != "RTOS":
+                        if action != 'RTOS':
                             # The source is not ramping --> Ramp it to the magnet current so it can be switched
                             magnet.set_source(magnet.magnet_current)
 
         if not magnet.lock and source_flag:
             # The source_flag has been set ramp the source to zero and unset the flag
-            magnet.set_action("RTOZ")
+            magnet.set_action('RTOZ')
             source_flag = False
 
         time.sleep(0.4)

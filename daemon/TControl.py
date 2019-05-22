@@ -17,11 +17,11 @@ class TControl:
 
     def __init__(self):
 
-        self.pico_visa = visa_subs.initialize_gpib(address=20, board=0, query_delay="0.04")
-        self.pico_visa.write("HDR0")
-        self.pico_visa.write("ARN 1")
-        self.pico_visa.write("REM 1")
-        self.tcs_visa = visa_subs.initialize_serial(address=6, idn="ID?")
+        self.pico_visa = visa_subs.initialize_gpib(address=20, board=0, query_delay='0.04')
+        self.pico_visa.write('HDR0')
+        self.pico_visa.write('ARN 1')
+        self.pico_visa.write('REM 1')
+        self.tcs_visa = visa_subs.initialize_serial(address=6, idn='ID?')
 
         address = ('localhost', 18871)
         self.server = socket_subs.SockServer(address)
@@ -66,7 +66,7 @@ class TControl:
         # Status events
         self.status_interval = 1.0
         self.last_status_time = datetime.now()
-        self.sensor = "CERNOX"
+        self.sensor = 'CERNOX'
 
         # Initialize a pid controller
         self.pid = pid_control.PID(
@@ -84,16 +84,16 @@ class TControl:
         # current in microAmp
         # print current
         source = source + 1
-        command = " ".join(("SETDAC", "%d" % source, "0", "%d" % current))
+        command = ' '.join(('SETDAC', '%d' % source, '0', '%d' % current))
 
         self.tcs_visa.query(command)
         return
 
     def read_pico(self):
         # Get the resistance of the current channel of the picowatt
-        self.pico_visa.write("ADC")
+        self.pico_visa.write('ADC')
         time.sleep(0.45)
-        answer = self.pico_visa.query("RES?")
+        answer = self.pico_visa.query('RES?')
         answer = answer.strip()
         try:
             self.resistance = float(answer)
@@ -103,25 +103,25 @@ class TControl:
         return
 
     def read_pico_range(self):
-        answer = self.pico_visa.query("RAN?")
+        answer = self.pico_visa.query('RAN?')
         answer = answer.strip()
         self.pico_range = int(answer)
         return
 
     def set_pico_channel(self, channel):
-        self.pico_visa.write("INP 0")
-        command = "".join(("MUX ", "%d" % channel))
+        self.pico_visa.write('INP 0')
+        command = "".join(('MUX ', '%d' % channel))
         self.pico_visa.write(command)
         time.sleep(3)
-        self.pico_visa.write("INP 1")
+        self.pico_visa.write('INP 1')
         time.sleep(10)
         self.pico_channel = channel
         return
 
     def read_tcs(self):
-        answer = self.tcs_visa.query("STATUS?")
-        reply = answer.split("\t")[1]
-        reply = reply.split(",")
+        answer = self.tcs_visa.query('STATUS?')
+        reply = answer.split('\t')[1]
+        reply = reply.split(',')
         sensor_range = reply[1::4]
         current = reply[2::4]
         heaters = reply[3::4]
@@ -166,9 +166,9 @@ class TControl:
     def read_msg(self, msg):
 
         msg = msg.decode()  # change in python 3
-        msg = msg.split(" ")
+        msg = msg.split(' ')
 
-        if msg[0] == "SET":
+        if msg[0] == 'SET':
             try:
                 new_set_temperature = float(msg[1])
                 # Only interpret new setpoints if the change is >50mK
@@ -180,11 +180,11 @@ class TControl:
                     # Set at set to be false and write the new set point
                     self.at_set = False
                     self.sweep_mode = False
-                    print("Got probe set point from socket %.2f\n" % self.set_temp)
+                    print('Got probe set point from socket %.2f\n' % self.set_temp)
             except:
                 pass
 
-        if msg[0] == "SWP":
+        if msg[0] == 'SWP':
             try:
                 self.sweep_finish = float(msg[1])
                 if abs(self.sweep_finish - self.set_temp) > 0.05:
@@ -202,23 +202,23 @@ class TControl:
                     self.at_set = False
                     self.sweep_time_length = abs(self.set_temp - self.sweep_finish) / self.sweep_rate
                     print(
-                        "Got temperature sweep to %.2f K at %.2f K/min... Sweep takes %.2f minutes, maximum over time is %.2f" % (
+                        'Got temperature sweep to %.2f K at %.2f K/min... Sweep takes %.2f minutes, maximum over time is %.2f' % (
                             self.sweep_finish, self.sweep_rate, self.sweep_time_length, self.sweep_max_over_time))
                     # Write the finish temp
                     # Write the setpoint to start the ramp
                     self.sweep_mode = True
                     self.sweep_start_time = datetime.now()
-                    print("Starting the sweep\n")
+                    print('Starting the sweep\n')
             except:
                 pass
 
-        if msg[0] == "T_ERROR":
+        if msg[0] == 'T_ERROR':
             try:
                 self.error_temp = float(msg[1])
             except:
                 pass
 
-        if msg[0] == "DT_ERROR":
+        if msg[0] == 'DT_ERROR':
             try:
                 self.error_delta_temp = float(msg[1])
             except:
@@ -235,10 +235,10 @@ class TControl:
         if d_temp_in_minutes > (self.sweep_time_length + self.sweep_max_over_time):
             # The sweep ran out of time, stop it
             sweep_finished = True
-            print("Sweep over time... Finishing...")
+            print('Sweep over time... Finishing...')
         elif (self.temperature - self.sweep_finish) * self.sweep_direction > 0.0:
             sweep_finished = True
-            print("Final temperature reached... Finishing...")
+            print('Final temperature reached... Finishing...')
         else:
             sweep_finished = False
 
@@ -268,9 +268,9 @@ class TControl:
         return
 
     def print_status(self):
-        status_string = "%s = %.2f K; PID output = %d; " % (self.sensor, self.temperature, self.pid_output)
-        status_string += "Status message = %d; " % self.status_msg
-        status_string += "P = %.2f, I = %.2f, D = %.2f\n" % (self.pid.p_value, self.pid.i_value, self.pid.d_value)
+        status_string = '%s = %.2f K; PID output = %d; ' % (self.sensor, self.temperature, self.pid_output)
+        status_string += 'Status message = %d; ' % self.status_msg
+        status_string += 'P = %.2f, I = %.2f, D = %.2f\n' % (self.pid.p_value, self.pid.i_value, self.pid.d_value)
         print(status_string)
         self.last_status_time = datetime.now()
         return
@@ -278,10 +278,10 @@ class TControl:
     def tcs_switch_heater(self, heater):
         command_vector = np.zeros((12,))
         command_vector[2 + heater * 4] = 1
-        command_string = "SETUP "
-        print("Heater %d Switched %d" % (heater, int(not self.tcs_heater[heater])))
+        command_string = 'SETUP '
+        print('Heater %d Switched %d' % (heater, int(not self.tcs_heater[heater])))
         for i in command_vector:
-            command_string = "".join((command_string, "%d," % i))
+            command_string = "".join((command_string, '%d,' % i))
         command_string = command_string[:-1]
         reply = self.tcs_visa.query(command_string)
         return

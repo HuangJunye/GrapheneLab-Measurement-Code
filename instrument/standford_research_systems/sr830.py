@@ -5,4 +5,4 @@ class SR830(LockInAmplifier):
 
     def __init__(self, address):
         super().__init__(address)
-        self.name = "SR830"
+        self.name = 'SR830'

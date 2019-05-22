@@ -12,32 +12,32 @@ def device_fridge_2d(
         graph_proc, rpg, data_file,
         read_inst, sweep_inst=[], set_inst=[],
         set_value=[], pre_value=[], finish_value=[],
-        fridge_sweep="B", fridge_set=0.0,
+        fridge_sweep='B', fridge_set=0.0,
         device_start=0.0, device_stop=1.0, device_step=0.1, device_finish=0.0,
         device_mid=[],
         fridge_start=0.0, fridge_stop=1.0, fridge_rate=0.1,
         delay=0, sample=1,
         timeout=-1, wait=0.0,
-        comment="No comment!", network_dir="Z:\\DATA",
+        comment='No comment!', network_dir='Z:\\DATA',
         persist=True, x_custom=[]
 ):
     """2D data acquisition either by sweeping a device parameter
     or by sweepng a fridge parameter
     The program decides which of these to do depending on if the
-    the variable "sweep_inst" is assigned.
-    i.e. if "sweep_inst" is assigned the device is swept and the
+    the variable 'sweep_inst' is assigned.
+    i.e. if 'sweep_inst' is assigned the device is swept and the
     fridge parameter is stepped.
-    If the device is being swept the variable "fridge_rate" is the size
+    If the device is being swept the variable 'fridge_rate' is the size
     of successive steps of either T or B.
     If the fridge is being swept the first set_inst is stepped by the
-    "device_step"
+    'device_step'
 
     For the case of successive B sweeps the fridge will be swept
     forwards and backwards
     e.g.	Vg = -60 V B = -9 --> +9 T
             Vg = -50 V B = +9 --> -9 T
             etc ...
-    Note that in this case the first "set_value" will be overwritten
+    Note that in this case the first 'set_value' will be overwritten
     therefore a dummy e.g. 0.0 should be written in the case that there
     are additional set_inst
     """
@@ -47,7 +47,7 @@ def device_fridge_2d(
     else:
         sweep_device = False
 
-    if fridge_sweep == "B":
+    if fridge_sweep == 'B':
         b_sweep = True
     else:
         b_sweep = False
@@ -90,7 +90,7 @@ def device_fridge_2d(
             view_box[i] = rpg.ViewBox(invertY=True)
             image_view[i] = rpg.ImageView(view=rpg.PlotItem(viewBox=view_box[i]))
             plot_2d_window[i].setCentralWidget(image_view[i])
-            plot_2d_window[i].setWindowTitle("read_inst %d" % i)
+            plot_2d_window[i].setWindowTitle('read_inst %d' % i)
             plot_2d_window[i].show()
             view_box[i].setAspectLocked(False)
 
@@ -142,7 +142,7 @@ def device_fridge_2d(
                     graph_proc, rpg, data_file,
                     read_inst, set_inst=set_inst, set_value=set_value,
                     finish_value=finish_value, pre_value=pre_value,
-                    fridge_sweep="B", fridge_set=fridge_set,
+                    fridge_sweep='B', fridge_set=fridge_set,
                     sweep_start=fridge_start, sweep_stop=fridge_stop,
                     sweep_rate=fridge_rate, sweep_finish=fridge_stop,
                     persist=False,
@@ -160,7 +160,7 @@ def device_fridge_2d(
                     graph_proc, rpg, data_file,
                     read_inst, set_inst=set_inst, set_value=set_value,
                     finish_value=finish_value, pre_value=pre_value,
-                    fridge_sweep="T", fridge_set=fridge_set,
+                    fridge_sweep='T', fridge_set=fridge_set,
                     sweep_start=fridge_start, sweep_stop=fridge_stop,
                     sweep_rate=fridge_rate, sweep_finish=fridge_stop,
                     persist=True,
@@ -176,7 +176,7 @@ def device_fridge_2d(
 
     m_client = socket_subs.SockClient('localhost', 18861)
     time.sleep(2)
-    measurement_subs.socket_write(m_client, "SET 0.0 0")
+    measurement_subs.socket_write(m_client, 'SET 0.0 0')
     time.sleep(2)
     m_client.close()
 
