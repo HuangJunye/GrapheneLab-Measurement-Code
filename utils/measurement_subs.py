@@ -133,15 +133,15 @@ def open_csv_file(
 
     for inst in sweep_inst:
         csv_file.write(f'SWEEP: {inst.description()}')
-        column_string = f'{column_string,inst.source}'
+        column_string = f'{column_string},{inst.source}'
 
     for inst in set_inst:
         csv_file.write(f'SET: {inst.description()}')
-        column_string = f'{column_string,inst.source}'
+        column_string = f'{column_string},{inst.source}'
 
     for inst in read_inst:
         csv_file.write(f'READ: {inst.description()}')
-        column_string = f'{column_string,inst.source}'
+        column_string = f'{column_string},{inst.column_names}'
 
     column_string = f'{column_string}\n'
     csv_file.write(comment)
