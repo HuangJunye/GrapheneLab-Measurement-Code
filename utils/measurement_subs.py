@@ -95,7 +95,7 @@ def open_csv_file(
     # Setup the directories
     # Try to make a directory called Data in the CWD
     current_dir = os.getcwd()
-    data_dir = f'{current_dir}\\Data''
+    data_dir = f'{current_dir}\\Data'
     try:
         os.mkdir(data_dir)
     except OSError:
