@@ -6,25 +6,25 @@ last edited : July 2013
 
 Explanation:
 
-	There are 3 variables in our instrument:
-	1 Temperature
-	2 Field
-	3 Device parameter; e.g. Backgate V, Topgate V, Current, Angle (one day)
+    There are 3 variables in our instrument:
+    1 Temperature
+    2 Field
+    3 Device parameter; e.g. Backgate V, Topgate V, Current, Angle (one day)
 
-	Typically a measurement will fix two of these and vary the other.
-	The controls for temperature and field are controlled by external
-	services that can be called by the measurement. The measurement
-	invokes a localhost for each of these services and can then
-	access certain methods
-	
-	The generic ports for these are
-	Magnet: 18861
-	Temperature: 18871
+    Typically a measurement will fix two of these and vary the other.
+    The controls for temperature and field are controlled by external
+    services that can be called by the measurement. The measurement
+    invokes a localhost for each of these services and can then
+    access certain methods
 
-	Data from these processes can also be accessed through named pipes
+    The generic ports for these are
+    Magnet: 18861
+    Temperature: 18871
 
-	Device parameters are so far controlled in situ in the measurement
-	loop. This should probably also be changed to be consistent
+    Data from these processes can also be accessed through named pipes
+
+    Device parameters are so far controlled in situ in the measurement
+    loop. This should probably also be changed to be consistent
 
 """
 
@@ -95,7 +95,7 @@ def open_csv_file(
     # Setup the directories
     # Try to make a directory called Data in the CWD
     current_dir = os.getcwd()
-    data_dir = "".join((current_dir, '\\Data'))
+    data_dir = f'{current_dir}\\Data''
     try:
         os.mkdir(data_dir)
     except OSError:
@@ -106,17 +106,17 @@ def open_csv_file(
 
     network_dir = network_dir
     dir_name = os.path.basename(current_dir)
-    net_dir = "".join((network_dir, '\\', dir_name))
+    net_dir = f'{network_dir}\\{dir_name}'
     if not os.path.exists(net_dir):
         try:
             os.mkdir(net_dir)
         except OSError:
             pass
 
-    # Try to make a file called ...-0.dat in data else ...-1.dat etc.
+    # Try to make a file called ...-00.dat in data else ...-01.dat etc.
     i = 0
     while True:
-        file = "".join((data_dir, '\\', file_name, '-', '%d' % i, '.dat'))
+        file = f'{data_dir}\\{file_name}-{i:02d}.dat'
         try:
             os.stat(file)
             i = i+1
@@ -129,26 +129,26 @@ def open_csv_file(
     # Write the starttime and a description of each of the instruments
     file_writer.writerow([start_time])
 
-    column_string = 'B (T), T(mK) '
+    column_string = 'B (T),T (mK)'
 
     for inst in sweep_inst:
-        csv_file.write("".join(('SWEEP: ', inst.description())))
-        column_string = "".join((column_string, ', ', inst.source))
+        csv_file.write(f'SWEEP: {inst.description()}')
+        column_string = f'{column_string,inst.source}'
 
     for inst in set_inst:
-        csv_file.write("".join(('SET: ', inst.description())))
-        column_string = "".join((column_string, ', ', inst.source))
+        csv_file.write(f'SET: {inst.description()}')
+        column_string = f'{column_string,inst.source}'
 
     for inst in read_inst:
-        csv_file.write("".join(('READ: ', inst.description())))
-        column_string = "".join((column_string, ', ', inst.column_names))
+        csv_file.write(f'READ: {inst.description()}')
+        column_string = f'{column_string,inst.source}'
 
-    column_string = "".join((column_string, '\n'))
+    column_string = f'{column_string}\n'
     csv_file.write(comment)
     csv_file.write('\n')
     csv_file.write(column_string)
 
-    print('Writing to data file %s\n' % file)
+    print(f'Writing to data file {file}\n')
     return file_writer, file, net_dir
 
 
