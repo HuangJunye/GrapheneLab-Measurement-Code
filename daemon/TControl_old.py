@@ -1,3 +1,5 @@
+import asyncore
+import time
 from collections import deque
 from datetime import datetime
 
@@ -5,8 +7,7 @@ import numpy as np
 
 import utils.pid_control as pid_control
 import utils.socket_subs as socket_subs
-from instrument.picowatt.avs47b import AVS47B
-from instrument.leiden_cryogenics.tcs import TripleCurrentSource
+import utils.visa_subs as visa_subs
 
 
 class TControl:
@@ -16,24 +17,31 @@ class TControl:
 
     def __init__(self):
 
+        self.pico_visa = visa_subs.initialize_gpib(address=20, board=0, query_delay='0.04')
+        self.pico_visa.write('HDR0')
+        self.pico_visa.write('ARN 1')
+        self.pico_visa.write('REM 1')
+        self.tcs_visa = visa_subs.initialize_serial(address=6, idn='ID?')
+
         address = ('localhost', 18871)
         self.server = socket_subs.SockServer(address)
 
-        self.pico = AVS47B()
-        self.tcs = TripleCurrentSource()
-        # Initialize a pid controller
-        self.pid = pid_control.PID(
-            p=20., i=.5, d=0, derivator=0, integrator=0,
-            integrator_max=60000, integrator_min=-2000)
-        self.pid_output = None
-
+        self.resistance = 1.0
         self.temperature = 0.0
         self.delta_temp = 1.0
 
+        self.pico_channel = 0
+        self.pico_range = 0
+
         self.set_temp = -1.0
 
+        self.tcs_heater = [0, 0, 0]
+        self.tcs_range = [1, 1, 1]
+        self.tcs_current = [0, 0, 0]
+
         self.max_set_temp = 10000.0
-        
+        self.max_current = 35000
+
         # Acceptable temperature error as a factor e.g. 100 * 0.005 = 0.5mK
         self.error_temp = 0.01  # The acceptable error in temperature
         self.error_delta_temp = 0.005  # The acceptable stability
@@ -58,11 +66,74 @@ class TControl:
         # Status events
         self.status_interval = 1.0
         self.last_status_time = datetime.now()
+        self.sensor = 'CERNOX'
+
+        # Initialize a pid controller
+        self.pid = pid_control.PID(
+            p=20., i=.5, d=0, derivator=0, integrator=0,
+            integrator_max=60000, integrator_min=-2000)
+        self.pid_output = None
 
         return
 
+    def set_tcs(self, source, current):
+        if current < 0:
+            current = 0
+        elif current > self.max_current:
+            current = self.max_current
+        # current in microAmp
+        # print current
+        source = source + 1
+        command = ' '.join(('SETDAC', '%d' % source, '0', '%d' % current))
+
+        self.tcs_visa.query(command)
+        return
+
+    def read_pico(self):
+        # Get the resistance of the current channel of the picowatt
+        self.pico_visa.write('ADC')
+        time.sleep(0.45)
+        answer = self.pico_visa.query('RES?')
+        answer = answer.strip()
+        try:
+            self.resistance = float(answer)
+        except:
+            self.resistance = self.resistance
+            pass
+        return
+
+    def read_pico_range(self):
+        answer = self.pico_visa.query('RAN?')
+        answer = answer.strip()
+        self.pico_range = int(answer)
+        return
+
+    def set_pico_channel(self, channel):
+        self.pico_visa.write('INP 0')
+        command = "".join(('MUX ', '%d' % channel))
+        self.pico_visa.write(command)
+        time.sleep(3)
+        self.pico_visa.write('INP 1')
+        time.sleep(10)
+        self.pico_channel = channel
+        return
+
+    def read_tcs(self):
+        answer = self.tcs_visa.query('STATUS?')
+        reply = answer.split('\t')[1]
+        reply = reply.split(',')
+        sensor_range = reply[1::4]
+        current = reply[2::4]
+        heaters = reply[3::4]
+        tmp = [1, 10, 100, 1000]
+        for i in range(3):
+            self.tcs_heater[i] = int(heaters[i])
+        for i in range(3):
+            self.tcs_current[i] = int(current[i]) * tmp[int(sensor_range[i]) - 1]
+        return
+
     def calc_temperature(self, calibration, factor=0.0):
-        log_resistance = np.log10(self.pico.resistance) - factor
+        log_resistance = np.log10(self.resistance) - factor
         r_poly = np.ones((len(calibration),))
         old_temperature = self.temperature
         for i in range(1, len(r_poly)):
@@ -103,7 +174,7 @@ class TControl:
                 # Only interpret new setpoints if the change is >50mK
                 if abs(self.set_temp - new_set_temperature) > 0.05:
                     self.set_temp = new_set_temperature
-                    if self.pico.channel == 5:
+                    if self.pico_channel == 5:
                         pass
                     self.pid.initialize_set_point(self.set_temp)
                     # Set at set to be false and write the new set point
@@ -177,7 +248,7 @@ class TControl:
             old_set_temperature = self.set_temp
             self.set_temp = self.sweep_start + self.sweep_rate_sec * d_temp_in_seconds.seconds * self.sweep_direction
 
-            if self.pico.channel == 5:
+            if self.pico_channel == 5:
                 pass
             self.pid.initialize_set_point(self.set_temp, reset=False)
 
@@ -202,4 +273,15 @@ class TControl:
         status_string += 'P = %.2f, I = %.2f, D = %.2f\n' % (self.pid.p_value, self.pid.i_value, self.pid.d_value)
         print(status_string)
         self.last_status_time = datetime.now()
+        return
+
+    def tcs_switch_heater(self, heater):
+        command_vector = np.zeros((12,))
+        command_vector[2 + heater * 4] = 1
+        command_string = 'SETUP '
+        print('Heater %d Switched %d' % (heater, int(not self.tcs_heater[heater])))
+        for i in command_vector:
+            command_string = "".join((command_string, '%d,' % i))
+        command_string = command_string[:-1]
+        reply = self.tcs_visa.query(command_string)
         return

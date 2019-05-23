@@ -7,8 +7,8 @@ from daemon.TControl import TControl
 
 # calibration parameters for temperature sensors
 calibrations = {
-    'SO703': [7318.782092, -13274.53584, 10276.68481, -4398.202411, 1123.561007, -171.3095557, 14.43456504, -0.518534965],
-    'SO914': [
+    'S0703': [7318.782092, -13274.53584, 10276.68481, -4398.202411, 1123.561007, -171.3095557, 14.43456504, -0.518534965],
+    'S0914': [
         5795.148097375, -11068.032226486, 9072.821104899, -4133.466851312,
         1129.955799406, -185.318021359, 16.881907269, -0.658939155
     ],
@@ -23,17 +23,17 @@ if __name__ == '__main__':
 
     control = TControl()
 
-    control.set_pico_channel(5)  # ch5 for CERNOX. Do not use below 1K
-    control.sensor = 'CERNOX'
+    control.pico.set_pico_channel(5)  # ch5 for CERNOX. Do not use below 1K
+    control.pico.sensor = 'CERNOX'
 
     # Main loop
-    control.read_tcs()
+    control.tcs.read_current()
 
     while True:
 
         # Read the picowatt and calculate the temperature
-        control.read_pico()
-        control.calc_temperature(calibrations[control.sensor])
+        control.pico.read_resistance()
+        control.calc_temperature(calibrations[control.pico.sensor])
         control.update_at_set()
         control.update_status_msg()
 
@@ -63,22 +63,22 @@ if __name__ == '__main__':
 
         if control.pid_output < 0:
             control.pid_output = 0
-        elif control.pid_output > control.max_current:
-            control.pid_output = control.max_current
+        elif control.pid_output > control.tcs.max_current:
+            control.pid_output = control.tcs.max_current
 
-        if control.pid_output > 0 and control.tcs_heater[2] == 0:
+        if control.pid_output > 0 and control.tcs.heater[2] == 0:
             # status is go to set and heater is off --> turn it on
-            control.set_tcs(2, control.pid_output)
-            control.tcs_switch_heater(2)
-            control.read_tcs()
-        elif control.pid_output <= 0 and control.tcs_heater[2] == 1:
+            control.tcs.set_current(2, control.pid_output)
+            control.tcs.switch_heater(2)
+            control.tcs.read_current()
+        elif control.pid_output <= 0 and control.tcs.heater[2] == 1:
             # status is go to set and heater is off --> turn it on
-            control.tcs_switch_heater(2)
-            control.set_tcs(2, 0)
-            control.read_tcs()
-        elif control.pid_output >= 0 and control.tcs_heater[2] == 1:
-            control.set_tcs(2, control.pid_output)
-            control.tcs_current[2] = control.pid_output
+            control.tcs.switch_heater(2)
+            control.tcs.set_current(2, 0)
+            control.tcs.read_current()
+        elif control.pid_output >= 0 and control.tcs.heater[2] == 1:
+            control.tcs.set_current(2, control.pid_output)
+            control.tcs.tcs_current[2] = control.pid_output
 
         time.sleep(0.5)
 
