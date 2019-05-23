@@ -23,7 +23,7 @@ if __name__ == '__main__':
 
     control = TControl()
 
-    control.pico.set_pico_channel(5)  # ch5 for CERNOX. Do not use below 1K
+    control.pico.set_channel(5)  # ch5 for CERNOX. Do not use below 1K
     control.pico.sensor = 'CERNOX'
 
     # Main loop
@@ -81,5 +81,3 @@ if __name__ == '__main__':
             control.tcs.tcs_current[2] = control.pid_output
 
         time.sleep(0.5)
-
-    control.tcs_visa.close()
