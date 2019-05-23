@@ -197,7 +197,7 @@ class TControl:
         return
 
     def print_status(self):
-        status_string = '%s = %.2f K; PID output = %d; ' % (self.sensor, self.temperature, self.pid_output)
+        status_string = '%s = %.2f K; PID output = %d; ' % (self.pico.sensor, self.temperature, self.pid_output)
         status_string += 'Status message = %d; ' % self.status_msg
         status_string += 'P = %.2f, I = %.2f, D = %.2f\n' % (self.pid.p_value, self.pid.i_value, self.pid.d_value)
         print(status_string)

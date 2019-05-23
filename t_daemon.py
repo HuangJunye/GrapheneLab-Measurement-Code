@@ -78,6 +78,6 @@ if __name__ == '__main__':
             control.tcs.read_current()
         elif control.pid_output >= 0 and control.tcs.heater[2] == 1:
             control.tcs.set_current(2, control.pid_output)
-            control.tcs.tcs_current[2] = control.pid_output
+            control.tcs.current[2] = control.pid_output
 
         time.sleep(0.5)
