@@ -116,7 +116,7 @@ def open_csv_file(
     # Try to make a file called ...-00.dat in data else ...-01.dat etc.
     i = 0
     while True:
-        file = f'{data_dir}\\{file_name}-{i:02d}.dat'
+        file = f'{data_dir}\\{file_name}_{i:02d}.dat'
         try:
             os.stat(file)
             i = i+1
