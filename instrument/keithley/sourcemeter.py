@@ -14,7 +14,7 @@ class Keithley(Instrument):
 
     """
     def __init__(self, address):
-        super().__init__(address)
+        super().__init__(address=address)
         self.mode = ""
         self.column_names = ""
         self.data = [0.0, 0.0]
