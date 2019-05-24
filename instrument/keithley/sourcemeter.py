@@ -76,13 +76,16 @@ class Keithley(Instrument):
 
             self.visa.write(f':SOUR:FUNC:MODE {self.source}')
             self.visa.write(f':SOUR:{self.source}:RANG {self.source_range:.2e}')
+
+            self.compliance = compliance
+            self.visa.write(f':SENS:{self.sense}:PROT:LEV {self.compliance:.3e}')
+
             if auto_sense_range:
                 self.visa.write(':SENS:CURR:RANG:AUTO 0')
             else:
                 self.visa.write(f':SENS:{self.sense}:RANG {self.sense_range:.2e}')
             
-            self.compliance = compliance
-            self.visa.write(f':SENS:{self.sense}:PROT:LEV {self.compliance:.3e}')
+
 
             # Configure the auto zero (reference)
             self.visa.write(':SYST:AZER:STAT ON')
