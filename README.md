@@ -35,3 +35,5 @@ Measurement results are plotted live using PyQtGraph.
 - Deploy to Janis, 9T, 12T and 16 system
 - Modular design for TDaemon and MDaemon to allow more robust support of vairous systems.
 - Support vector magnet
+- Variable step size in do_device_sweep and do_fridge_sweep
+- Logging to file in TDaemon and MDaemon
