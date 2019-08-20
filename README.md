@@ -1,13 +1,13 @@
 # GrapheneLab Measurement Code
 
-This is a Python-based transport measurement code used in GrapheneLab in National University of Singapore. The code was originally developed by Eoin O'Farrell and currently maintained by Huang Junye.
+This is a Python-based transport measurement code used in GrapheneLab in National University of Singapore. The code was originally developed by Eoin O'Farrell and currently maintained by Huang Junye and Hu Zihao.
 
 
 ## There is QCoDeS why would I want to use gcodes?
 
 QCoDeS is comprehensive, flexible but difficult to use. gcodes is designed to be simple and easy to use for simpler transport measurements.
 # Features
-## Use PyVisa to talk to instruments. 
+## Use PyVisa to talk to instruments.
 
 Currently supported instruments include:
 
@@ -30,3 +30,11 @@ Temperature and Magnet controllers:
 
 ## Live plotting using PyQtGraph
 Measurement results are plotted live using PyQtGraph.
+
+## Future work
+- Deploy to Janis, 9T, 12T and 16 system
+- Modular design for TDaemon and MDaemon to allow more robust support of vairous systems.
+- Support vector magnet
+- Variable step size in do_device_sweep and do_fridge_sweep
+- Logging to file in TDaemon and MDaemon
+- Fix the bug of jumping temperature when PicoWatt resistance bridge change range.
