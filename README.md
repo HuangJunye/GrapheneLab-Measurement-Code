@@ -37,3 +37,4 @@ Measurement results are plotted live using PyQtGraph.
 - Support vector magnet
 - Variable step size in do_device_sweep and do_fridge_sweep
 - Logging to file in TDaemon and MDaemon
+- Fix the bug of jumping temperature when PicoWatt resistance bridge change range.
