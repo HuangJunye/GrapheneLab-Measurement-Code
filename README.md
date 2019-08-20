@@ -30,3 +30,6 @@ Temperature and Magnet controllers:
 
 ## Live plotting using PyQtGraph
 Measurement results are plotted live using PyQtGraph.
+
+## Future work
+- Deploy to Janis, 9T, 12T and 16 system
