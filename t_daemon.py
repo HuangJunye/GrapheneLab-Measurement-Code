@@ -15,6 +15,7 @@ last edited : Apr 2019
 
 """
 import asyncore
+#?
 import time
 from collections import deque
 from datetime import datetime
@@ -33,8 +34,9 @@ class TControl:
 	"""
 
 	def __init__(self):
-
+		#?
 		self.pico_visa = visa_subs.initialize_gpib(20, 0, query_delay="0.04")
+		#?
 		self.pico_visa.write("HDR0")
 		self.pico_visa.write("ARN 1")
 		self.pico_visa.write("REM 1")
@@ -62,6 +64,7 @@ class TControl:
 		# Acceptable temperature error as a factor e.g. 100 * 0.005 = 0.5mK
 		self.error_temp = 0.01  # The acceptable error in temperature
 		self.error_delta_temp = 0.005  # The acceptable stability
+		#?
 
 		# Sweep description
 		self.sweep_finish = 0.0
