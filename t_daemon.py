@@ -103,7 +103,7 @@ class TControl:
 			current = self.max_current
 		# current in microAmp
 		# print current
-		source = source + 1
+		source = source + 1 # TCS hardware uses 1 index instead of 0 index
 		command = " ".join(("SETDAC", "%d" % source, "0", "%d" % current))
 
 		self.tcs_visa.query(command)
