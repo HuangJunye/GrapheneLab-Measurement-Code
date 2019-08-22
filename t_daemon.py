@@ -197,8 +197,7 @@ class TControl:
 				if abs(self.set_temp-new_set_temperature) > 0.05:
 					self.set_temp = new_set_temperature
 					if self.pico_channel == 5:
-						pass
-						#?
+						pass                                                     #?
 					self.pid.initialize_set_point(self.set_temp)
 					# Set at set to be false and write the new set point
 					self.at_set = False
@@ -326,6 +325,7 @@ if __name__ == '__main__':
 
 	control = TControl()
 
+	# TODO : use dictionary to link channel sensor name
 	control.set_pico_channel(5)  # ch5 for CERNOX. Do not use below 1K
 	control.sensor = "CERNOX"
 
