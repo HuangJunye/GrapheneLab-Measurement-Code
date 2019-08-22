@@ -36,10 +36,10 @@ class TControl:
 	def __init__(self):
 		#?
 		self.pico_visa = visa_subs.initialize_gpib(20, 0, query_delay="0.04")
-		#?
 		self.pico_visa.write("HDR0")
 		self.pico_visa.write("ARN 1")
 		self.pico_visa.write("REM 1")
+		#?
 		self.tcs_visa = visa_subs.initialize_serial("ASRL6::INSTR", idn="ID?")
 
 		address = ('localhost', 18871)
@@ -155,10 +155,12 @@ class TControl:
 	def calc_temperature(self, calibration, factor=0.0):
 		log_resistance = np.log10(self.resistance)-factor
 		r_poly = np.ones((len(calibration),))
+		# why "," ?
 		old_temperature = self.temperature
 		for i in range(1, len(r_poly)):
 			r_poly[i] = log_resistance * r_poly[i-1]
 		self.temperature = np.power(10, (np.sum(np.multiply(r_poly, calibration))))
+		#?
 		self.delta_temp = self.temperature - old_temperature
 
 		self.temp_history.pop()
@@ -196,6 +198,7 @@ class TControl:
 					self.set_temp = new_set_temperature
 					if self.pico_channel == 5:
 						pass
+						#?
 					self.pid.initialize_set_point(self.set_temp)
 					# Set at set to be false and write the new set point
 					self.at_set = False
