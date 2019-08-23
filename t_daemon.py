@@ -326,6 +326,10 @@ if __name__ == '__main__':
 	control = TControl()
 
 	# TODO : use dictionary to link channel sensor name
+	#sensor_channels = {0:"SO703",5:"CERNOX"}
+	#channel = 5
+	#control.set_pico_channel(channel)
+	#control.sensor = sensor_channels[channel]
 	control.set_pico_channel(5)  # ch5 for CERNOX. Do not use below 1K
 	control.sensor = "CERNOX"
 
