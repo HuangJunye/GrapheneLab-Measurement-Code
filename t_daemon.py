@@ -106,7 +106,7 @@ class TControl:
 		source = source + 1 # TCS hardware uses 1 index instead of 0 index
 		command = " ".join(("SETDAC", "%d" % source, "0", "%d" % current))
 
-		self.tcs_visa.query(command)
+		self.tcs_visa.query(command)                                            #?
 		return
 
 	def read_pico(self):
