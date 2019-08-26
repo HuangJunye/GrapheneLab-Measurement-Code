@@ -345,6 +345,7 @@ if __name__ == '__main__':
 		control.update_status_msg()
 
 		# Push the reading to clients
+		#?
 		for j in control.server.handlers:
 			j.to_send = f"{control.temperature:.3f} {control.status_msg:d}".encode()
 			socket_msg = j.received_data
@@ -373,7 +374,7 @@ if __name__ == '__main__':
 		elif control.pid_output > control.max_current:
 			control.pid_output = control.max_current
 
-		if control.pid_output > 0 and control.tcs_heater[2] == 0:
+		if control.pid_output > 0 and control.tcs_heater[2] == 0:               #?
 			# status is go to set and heater is off --> turn it on
 			control.set_tcs(2, control.pid_output)
 			control.tcs_switch_heater(2)
