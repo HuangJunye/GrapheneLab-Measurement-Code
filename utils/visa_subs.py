@@ -17,7 +17,7 @@ Functions written:
 
 """
 import visa as visa
-rm = visa.ResourceManager()
+rm = visa.ResourceManager()                                                      #?
 
 
 def initialize_gpib(address, board, query_id=True, read_termination="LF", **kwargs):
@@ -50,7 +50,7 @@ def initialize_serial(name, idn="*IDN?", read_termination="LF", **kwargs):
 	""" Initialize Serial devices using PyVisa """
 
 	try:
-		serial_visa = rm.open_resource(name)
+		serial_visa = rm.open_resource(name)                                     #?
 		if read_termination == "LF":
 			serial_visa.read_termination = "\n"
 		elif read_termination == "CR":

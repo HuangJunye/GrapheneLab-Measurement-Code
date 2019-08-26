@@ -15,6 +15,7 @@ last edited : Apr 2019
 
 """
 import asyncore
+#?
 import time
 from collections import deque
 from datetime import datetime
@@ -33,11 +34,12 @@ class TControl:
 	"""
 
 	def __init__(self):
-
+		#?
 		self.pico_visa = visa_subs.initialize_gpib(20, 0, query_delay="0.04")
 		self.pico_visa.write("HDR0")
 		self.pico_visa.write("ARN 1")
 		self.pico_visa.write("REM 1")
+		#?
 		self.tcs_visa = visa_subs.initialize_serial("ASRL6::INSTR", idn="ID?")
 
 		address = ('localhost', 18871)
@@ -62,6 +64,7 @@ class TControl:
 		# Acceptable temperature error as a factor e.g. 100 * 0.005 = 0.5mK
 		self.error_temp = 0.01  # The acceptable error in temperature
 		self.error_delta_temp = 0.005  # The acceptable stability
+		#?
 
 		# Sweep description
 		self.sweep_finish = 0.0
@@ -100,10 +103,10 @@ class TControl:
 			current = self.max_current
 		# current in microAmp
 		# print current
-		source = source + 1
+		source = source + 1 # TCS hardware uses 1 index instead of 0 index
 		command = " ".join(("SETDAC", "%d" % source, "0", "%d" % current))
 
-		self.tcs_visa.query(command)
+		self.tcs_visa.query(command)                                            #?
 		return
 
 	def read_pico(self):
@@ -152,10 +155,12 @@ class TControl:
 	def calc_temperature(self, calibration, factor=0.0):
 		log_resistance = np.log10(self.resistance)-factor
 		r_poly = np.ones((len(calibration),))
+		# why "," ?
 		old_temperature = self.temperature
 		for i in range(1, len(r_poly)):
 			r_poly[i] = log_resistance * r_poly[i-1]
 		self.temperature = np.power(10, (np.sum(np.multiply(r_poly, calibration))))
+		#?
 		self.delta_temp = self.temperature - old_temperature
 
 		self.temp_history.pop()
@@ -192,7 +197,7 @@ class TControl:
 				if abs(self.set_temp-new_set_temperature) > 0.05:
 					self.set_temp = new_set_temperature
 					if self.pico_channel == 5:
-						pass
+						pass                                                     #?
 					self.pid.initialize_set_point(self.set_temp)
 					# Set at set to be false and write the new set point
 					self.at_set = False
@@ -320,6 +325,11 @@ if __name__ == '__main__':
 
 	control = TControl()
 
+	# TODO : use dictionary to link channel sensor name
+	#sensor_channels = {0:"SO703",5:"CERNOX"}
+	#channel = 5
+	#control.set_pico_channel(channel)
+	#control.sensor = sensor_channels[channel]
 	control.set_pico_channel(5)  # ch5 for CERNOX. Do not use below 1K
 	control.sensor = "CERNOX"
 
@@ -335,6 +345,7 @@ if __name__ == '__main__':
 		control.update_status_msg()
 
 		# Push the reading to clients
+		#?
 		for j in control.server.handlers:
 			j.to_send = f"{control.temperature:.3f} {control.status_msg:d}".encode()
 			socket_msg = j.received_data
@@ -363,7 +374,7 @@ if __name__ == '__main__':
 		elif control.pid_output > control.max_current:
 			control.pid_output = control.max_current
 
-		if control.pid_output > 0 and control.tcs_heater[2] == 0:
+		if control.pid_output > 0 and control.tcs_heater[2] == 0:               #?
 			# status is go to set and heater is off --> turn it on
 			control.set_tcs(2, control.pid_output)
 			control.tcs_switch_heater(2)
