@@ -6,7 +6,7 @@
 Sub programs for operation of the PicoWatt and Leiden TCS to control temperature
 
 original author : Eoin O'Farrell
-current author : Huang Junye
+current author : Huang Junye, Hu Zihao
 last edited : Apr 2019
 
 
