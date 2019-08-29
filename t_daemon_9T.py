@@ -3,391 +3,385 @@
 
 """
 
-Sub programs for operation of the LakeShore 340 temperature controller
+Sub programs for operation of the PicoWatt and Leiden TCS to control temperature
 
-original author : Eoin O'Farrell
-current author : Huang Junye, Hu Zihao
-last edited : Apr 2019
+author : Eoin O'Farrell
+email : phyoec@nus.edu.sg
+last edited : August 2013
 
 
 	The daemon listens for commands to change the control loop or setpoint
 	The daemon broadcasts the current temperature
 
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	Temperature units are Kelvin
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+ToDo:
+
+	Listen
+	Broadcast
+	Initialize
+	ReadPico
+	CalcPID
+	SetTCS
+
 """
-import asyncore
-#?
+
+import SocketUtils as SocketUtils
+import logging
+import visa as visa
+import VisaSubs as VisaSubs
+import string as string
+import re as res
 import time
-from collections import deque
+import numpy as np
+import asyncore
+import PIDControl
 from datetime import datetime
 
-import numpy as np
+logging.basicConfig(filename='temp.log', filemode='a', format='%(asctime)s,%(message)s', level=logging.DEBUG)
 
-import utils.pid_control as pid_control
-import utils.socket_subs as socket_subs
-import utils.visa_subs as visa_subs
+class TControl():
 
-
-class TControl:
-
-	""" Initialization call, initialize visas for the TCS, Picowatt and the
-	Server, server always runs at 18871
-	"""
-
+	# Initialization call, initialize LS340 visa and start the server
+	# server always runs at 18871
 	def __init__(self):
-		#?
-		self.pico_visa = visa_subs.initialize_gpib(20, 0, query_delay="0.04")
-		self.pico_visa.write("HDR0")
-		self.pico_visa.write("ARN 1")
-		self.pico_visa.write("REM 1")
-		#?
-		self.tcs_visa = visa_subs.initialize_serial("ASRL6::INSTR", idn="ID?")
+		self.Visa = visa.instrument("GPIB::12::INSTR")
+		# start the server
+		address = ('localhost',18871)
+		self.Server = SocketUtils.SockServer(address)
 
-		address = ('localhost', 18871)
-		self.server = socket_subs.SockServer(address)
+		self.Temperature = np.zeros((7,))
+		# for the 9T there are 4 temperatures VTI, probe, 1st stage, He Pot
+		# but we only set temperatures for VTI, probe and 4He pot
+		# and there are only 2 loops...
+		# It's a bit confusing so for the most part we ignore the 1st stage temp
+		# We just push it to the terminal once every hour so that the user
+		# can keep an eye on it.
+		# For simplicity we define the temperature array to hold
+		self.SensorName = ["VTI", "Probe", "PTC Stage 1", "PTC Stage 2", "Magnet", "Switch", "He Pot"]
+		self.SensorLocation = ["A", "B", "C1", "C2", "C3", "C4", "D"]
+		# there are 3 set temps
+		self.SetTemp = np.zeros((3,))
+		self.Status = -1
+		# but there are only 2 loops :(
+		self.LoopNumber = [1,2]
+		self.ZoneControl = [False, False]
+		self.LoopEnable = [False, False]
+		self.PIDVals = np.empty((3,3))
 
-		self.resistance = 1.0
-		self.temperature = 0.0
-		self.delta_temp = 1.0
+		# For 9T there are 3 heater outputs main heater = VTI, Analog 1 = 4He Pot
+		# Analog 2 = Probe
+		# so we have the commands to read the heaters
+		self.HeaterCommand = ["HTR?", "AOUT? 2", "AOUT? 1"]
+		self.HeaterCurrent = np.zeros((3,))
+		self.DeltaTemp = np.zeros((4,))
+		self.MaxSetTemp = np.array([300.0,310.0,10.0])
 
-		self.pico_channel = 0
-		self.pico_range = 0
+		# The acceptable error in temperature as a factor of the
+		# set temperature e.g. 2.0 K x 0.005 = 0.01 K
+		self.ErrorTemp = 0.005
+		# The acceptable stability as a factor of the error
+		self.ErrorDeltaTemp = 0.001
+		# We maintain the VTI slightly below the probe
+		self.DeltaProbe = 2.0
 
-		self.set_temp = -1.0
+		# Sweep description, temperature denotes probe temperatures
+		self.SweepFinish = 0.0
+		self.SweepRate = 0. # rate in K/min
+		self.SweepTime = 0. # in seconds
+		self.SweepDirection = 1.0
+		self.SweepStartTime = []
+		self.SweepTimeLength = 0.0
+		self.SweepMaxOverTime = 15.0 # minutes
 
-		self.tcs_heater = [0, 0, 0]
-		self.tcs_range = [1, 1, 1]
-		self.tcs_current = [0, 0, 0]
+		# Status Parameters
+		# Modes are 0: set, 1: sweep
+		self.AtSet = False
+		self.SweepMode = False
+		self.StatusMsg = 0
 
-		self.max_set_temp = 10000.0
-		self.max_current = 35000
+		# Status events, every so often we push a status to the terminal
+		self.StatusInterval = 1 # minutes
+		self.LastStatusTime = datetime.now()
 
-		# Acceptable temperature error as a factor e.g. 100 * 0.005 = 0.5mK
-		self.error_temp = 0.01  # The acceptable error in temperature
-		self.error_delta_temp = 0.005  # The acceptable stability
-		#?
-
-		# Sweep description
-		self.sweep_finish = 0.0
-		self.sweep_start = 0.0
-		self.sweep_rate = 1.0  # As received from socket in mK/min
-		self.sweep_rate_sec = 1.0/60.0
-		self.sweep_time = 0.0  # seconds
-		self.sweep_direction = 1.0
-		self.sweep_start_time = 0.0
-		self.sweep_time_length = 0.0
-		self.sweep_max_over_time = 15.0  # minutes
-
-		# Status parameters
-		self.at_set = False
-		self.sweep_mode = False
-		self.status_msg = 0  # not ready
-		self.temp_history = deque(np.zeros((60,)))
-
-		# Status events
-		self.status_interval = 1.0
-		self.last_status_time = datetime.now()
-		self.sensor = "CERNOX"
-
-		# Initialize a pid controller
-		self.pid = pid_control.PID(
-			p=20., i=.5, d=0, derivator=0, integrator=0,
-			integrator_max=60000, integrator_min=-2000)
-		self.pid_output = None
+		# Turn off ramp mode
+		self.Visa.write("RAMP 1,0,0")
+		#self.Visa.write("RAMP 2,1,1.0")
+		self.Visa.write("RAMP 2,0.0,0.0")
 
 		return
 
-	def set_tcs(self, source, current):
-		if current < 0:
-			current = 0
-		elif current > self.max_current:
-			current = self.max_current
-		# current in microAmp
-		# print current
-		source = source + 1 # TCS hardware uses 1 index instead of 0 index
-		command = " ".join(("SETDAC", "%d" % source, "0", "%d" % current))
+	# The ls340 often formats replies X,Y,Z -> return selection of values
+	def ls340AskMulti(self,Query,Return):
+		Reply = self.Visa.ask(Query)
+		Reply = Reply.split(",")
+		Answer = list()
+		for i in Return:
+			Answer.append(Reply[i])
 
-		self.tcs_visa.query(command)                                            #?
+		return Answer
+
+	# Get the loop paramters: enabled, control mode, PID, setpoints
+	def GetLoopParams(self):
+
+		for i,v in enumerate(self.LoopNumber):
+			# enabled?
+			Reply = self.ls340AskMulti(" ".join(("CSET?","%d" % v)),[2])
+			self.LoopEnable[i] = bool(int(Reply[0]))
+			# Control mode
+			Reply = self.Visa.ask(" ".join(("CMODE?","%d" % v)))
+			if Reply == "2":
+				self.ZoneControl[i] = True
+			else:
+				self.ZoneControl[i] = False
+			# PIDs
+			Reply = self.ls340AskMulti(" ".join(("PID?","%d" % v)),[0,1,2])
+			for j,u in enumerate(Reply):
+				self.PIDVals[j,i] = float(u)
+			# setpoints
+			Reply = self.Visa.ask(" ".join(("SETP?","%d" % (i+1))))
+			self.SetTemp[i] = float(Reply)
+
 		return
 
-	def read_pico(self):
-		# Get the resistance of the current channel of the picowatt
-		self.pico_visa.write("ADC")
-		time.sleep(0.45)
-		answer = self.pico_visa.query("RES?")
-		answer = answer.strip()
-		try:
-			self.resistance = float(answer)
-		except:
-			self.resistance = self.resistance
-			pass
+
+	def ReadTempHeater(self):
+		# read the temperature and heater outputs
+		OldTemp = self.Temperature
+		for i,v in enumerate(self.SensorLocation):
+			# temperature
+			Reply = self.Visa.ask(" ".join(("KRDG?","%s" % v)))
+			try:
+				self.Temperature[i] = float(Reply)
+			except ValueError:
+				self.Temperature[i] = OldTemp[i]
+		self.DeltaTemp = self.Temperature - OldTemp
+
+		# read the heaters
+		for i,v in enumerate(self.HeaterCommand):
+			HtrReply = self.Visa.ask(v)
+			try:
+				self.HeaterCurrent[i] = float(HtrReply)
+			except ValueError:
+				self.HeaterCurrent[i] = 0.0
+
 		return
 
-	def read_pico_range(self):
-		answer = self.pico_visa.query("RAN?")
-		answer = answer.strip()
-		self.pico_range = int(answer)
+	# write set points to the instrument for the probe
+	def UpdateSetTemp(self,SetTemp):
+
+		SetTemp = [SetTemp - self.DeltaProbe, SetTemp]
+		for i,v in enumerate(SetTemp):
+			if (v < self.MaxSetTemp[i]) and (v >= 0.0):
+				self.SetTemp[i] = v
+			elif (v < 0.0):
+				self.SetTemp[i] = 0.0
+			else:
+				self.SetTemp[i] = self.MaxSetTemp[i]
+
 		return
 
-	def set_pico_channel(self, channel):
-		self.pico_visa.write("INP 0")
-		command = "".join(("MUX ", "%d" % channel))
-		self.pico_visa.write(command)
-		time.sleep(3)
-		self.pico_visa.write("INP 1")
-		time.sleep(10)
-		self.pico_channel = channel
+
+	def WriteSetpoint(self):
+
+		for i,v in enumerate(self.LoopNumber):
+			self.Visa.write("".join(("SETP ","%d," % v, "%.3f" % self.SetTemp[i])))
+
 		return
 
-	def read_tcs(self):
-		answer = self.tcs_visa.query("STATUS?")
-		reply = answer.split("\t")[1]
-		reply = reply.split(",")
-		sensor_range = reply[1::4]
-		current = reply[2::4]
-		heaters = reply[3::4]
-		tmp = [1,10,100,1000]
-		for i in range(3):
-			self.tcs_heater[i] = int(heaters[i])
-		for i in range(3):
-			self.tcs_current[i] = int(current[i])*tmp[int(sensor_range[i])-1]
-		return
-
-	def calc_temperature(self, calibration, factor=0.0):
-		log_resistance = np.log10(self.resistance)-factor
-		r_poly = np.ones((len(calibration),))
-		# why "," ?
-		old_temperature = self.temperature
-		for i in range(1, len(r_poly)):
-			r_poly[i] = log_resistance * r_poly[i-1]
-		self.temperature = np.power(10, (np.sum(np.multiply(r_poly, calibration))))
-		#?
-		self.delta_temp = self.temperature - old_temperature
-
-		self.temp_history.pop()
-		self.temp_history.appendleft(self.temperature)
-		return
-
-	# Update the parameter at_set for the probe
-	def update_at_set(self):
-		is_set = False
-		# The stability measure is v crude
-		is_stable = False
-		# 1 = Sweep
-		error_factor = abs(self.temperature - self.set_temp)/self.temperature
-		delta_temp_factor = abs(np.std(self.temp_history))/self.temperature
-		if error_factor < self.error_temp:
-			is_set = True
-		if delta_temp_factor < self.error_delta_temp:
-			is_stable = True
-		self.at_set = is_set and is_stable
-		return
 
 	# Interpret a message from the socket, current possible messages are
 	# SET ...  -  set probe the temperature
 	# SWP ...  -  sweep the probe temperature
-	def read_msg(self, msg):
+	def ReadMsg(self,Msg):
+		Msg = Msg.split(" ")
 
-		msg = msg.decode()  # change in python 3
-		msg = msg.split(" ")
-
-		if msg[0] == "SET":
+		if Msg[0] == "SET":
 			try:
-				new_set_temperature = float(msg[1])
+				NewSet = float(Msg[1])
 				# Only interpret new setpoints if the change is >50mK
-				if abs(self.set_temp-new_set_temperature) > 0.05:
-					self.set_temp = new_set_temperature
-					if self.pico_channel == 5:
-						pass                                                     #?
-					self.pid.initialize_set_point(self.set_temp)
+				if abs(self.SetTemp[1]-NewSet) > 0.05:
+					if self.SweepMode:
+						# We are sweeping so kill the sweep
+						print "Killing sweep..."
+						self.Visa.write("RAMP 1,0,0")
+						self.Visa.write("RAMP 2,1,3.0")
+					self.UpdateSetTemp(NewSet)
 					# Set at set to be false and write the new set point
-					self.at_set = False
-					self.sweep_mode = False
-					print("Got probe set point from socket %.2f\n" % self.set_temp)
+					self.AtSet = False
+					self.SweepMode = False
+					self.WriteSetpoint()
+					print "Got probe set point from socket %.2f\n" % self.SetTemp[1]
 			except:
 				pass
 
-		if msg[0] == "SWP":
+		if Msg[0] == "SWP":
 			try:
-				self.sweep_finish = float(msg[1])
-				if abs(self.sweep_finish - self.set_temp) > 0.05:
-					self.sweep_start = self.set_temp
-					self.pid.initialize_set_point(self.set_temp)
-					self.sweep_rate = abs(float(msg[2]))
-					self.sweep_rate_sec = self.sweep_rate/60.0
-					self.sweep_max_over_time = abs(float(msg[3]))
+				self.SweepFinish = float(Msg[1])
+				if abs(self.SweepFinish - self.SetTemp[1]) > 0.05:
+					self.SweepRate = abs(float(Msg[2]))
+					self.SweepMaxOverTime = abs(float(Msg[3]))
 					# Check if the sweep is up or down
-					if self.sweep_finish >= self.set_temp:
-						self.sweep_direction = 1.0
+					if self.SweepFinish >= self.SetTemp[1]:
+						self.SweepDirection = 1.0
 					else:
-						self.sweep_direction = -1.0
+						self.SweepDirection = -1.0
 					# Put the LS340 into ramp mode
-					self.at_set = False
-					self.sweep_time_length = abs(self.set_temp - self.sweep_finish)/self.sweep_rate
-					print("Got temperature sweep to %.2f K at %.2f K/min... Sweep takes %.2f minutes, maximum over time is %.2f" % (self.sweep_finish, self.sweep_rate, self.sweep_time_length, self.sweep_max_over_time))
+					self.Visa.write("RAMP 1,1,%.3f" % self.SweepRate)
+					self.Visa.write("RAMP 2,1,%.3f" % self.SweepRate)
+					self.AtSet = False
+					self.SweepTimeLength = abs(self.SetTemp[1] - self.SweepFinish)/self.SweepRate
+					print "Got temperature sweep to %.2f K at %.2f K/min... Sweep takes %.2f minutes, maximum over time is %.2f" % (self.SweepFinish, self.SweepRate, self.SweepTimeLength, self.SweepMaxOverTime)
 					# Write the finish temp
+					self.UpdateSetTemp(self.SweepFinish)
 					# Write the setpoint to start the ramp
-					self.sweep_mode = True
-					self.sweep_start_time = datetime.now()
-					print("Starting the sweep\n")
+					self.WriteSetpoint()
+					self.SweepMode = True
+					self.SweepStartTime = datetime.now()
+					print "Starting the sweep\n"
 			except:
 				pass
 
-		if msg[0] == "T_ERROR":
+		if Msg[0] == "T_ERROR":
 			try:
-				self.error_temp = float(msg[1])
+				self.ErrorTemp = float(Msg[1])
 			except:
 				pass
 
-		if msg[0] == "DT_ERROR":
+		if Msg[0] == "DT_ERROR":
 			try:
-				self.error_delta_temp = float(msg[1])
+				self.ErrorDeltaTemp = float(Msg[1])
 			except:
 				pass
 
 		return
 
-	def sweep_control(self):
+
+	# Update the parameter AtSet for the probe
+	def UpdateAtSet(self):
+		Set = False
+		# The stability measure is v crude
+		Stable = False
+		# 1 = Sweep
+		ErrorFactor = abs(self.Temperature[1] - self.SetTemp[1])/self.Temperature[1]
+		DeltaTempFactor = abs(self.DeltaTemp[1])/self.Temperature[1]
+		if ErrorFactor < self.ErrorTemp:
+			Set = True
+		if DeltaTempFactor < self.ErrorDeltaTemp:
+			Stable = True
+		self.AtSet = Set and Stable
+		return
+
+	def SweepControl(self):
 
 		# We are sweeping so check if the sweep is finished
-		d_temp_in_seconds = datetime.now() - self.sweep_start_time
-		d_temp_in_minutes = d_temp_in_seconds.seconds/60.0
+		dT = datetime.now() - self.SweepStartTime
+		dT = dT.seconds/60.0
 
-		if d_temp_in_minutes > (self.sweep_time_length + self.sweep_max_over_time):
+		if dT > (self.SweepTimeLength + self.SweepMaxOverTime):
 			# The sweep ran out of time, stop it
-			sweep_finished = True
-			print("Sweep over time... Finishing...")
-		elif (self.temperature - self.sweep_finish)*self.sweep_direction > 0.0:
-			sweep_finished = True
-			print("Final temperature reached... Finishing...")
+			SweepFinished = True
+			print "Sweep over time... Finishing..."
+		elif (self.Temperature[1] - self.SweepFinish)*self.SweepDirection > 0.0:
+			SweepFinished = True
+			print "Final temperature reached... Finishing..."
 		else:
-			sweep_finished = False
+			SweepFinished = False
 
-		if sweep_finished:
-			self.sweep_mode = False
-		else:
-			old_set_temperature = self.set_temp
-			self.set_temp = self.sweep_start + self.sweep_rate_sec * d_temp_in_seconds.seconds * self.sweep_direction
-
-			if self.pico_channel == 5:
-				pass
-			self.pid.initialize_set_point(self.set_temp, reset=False)
+		if SweepFinished:
+			# The sweep is finished stop ramping and change the mode
+			self.Visa.write("RAMP 1,0,0")
+			self.Visa.write("RAMP 2,1,3.0")
+			# Write the setpoint to the current temperature
+			self.UpdateSetTemp(self.Temperature[1])
+			self.WriteSetpoint()
+			self.SweepMode = False
 
 		return
 
-	def update_status_msg(self):
+
+
+	def UpdateStatusMsg(self):
 		# TDaemon status messages:
 		# 0 = Not ready
 		# 1 = Ready
 
-		if self.at_set and not self.sweep_mode:
-			status = 1  # Ready
+		if self.AtSet and not self.SweepMode:
+			Status = 1 # Ready
 		else:
-			status = 0  # Not ready
+			Status = 0 # Not ready
 
-		self.status_msg = status
+		self.StatusMsg = Status
 		return
 
-	def print_status(self):
-		status_string = "%s = %.2f K; PID output = %d; " % (self.sensor, self.temperature, self.pid_output)
-		status_string += "Status message = %d; " % self.status_msg
-		status_string += "P = %.2f, I = %.2f, D = %.2f\n" % (self.pid.p_value, self.pid.i_value, self.pid.d_value)
-		print(status_string)
-		self.last_status_time = datetime.now()
+	def PrintStatus(self):
+		StatusString = ""
+		TempString = ""
+		for i,v in enumerate(self.Temperature):
+			StatusString += "%s = %.3f K; " % (self.SensorName[i],self.Temperature[i])
+			TempString += "%.3f," % (self.Temperature[i])
+
+		StatusString += "Status message = %d\n" % self.StatusMsg
+
+		print StatusString
+		logging.debug(TempString) # log temperature reading to 'temp.log'
+		self.LastStatusTime = datetime.now()
 		return
-
-	def tcs_switch_heater(self, heater):
-		command_vector = np.zeros((12,))
-		command_vector[2+heater*4] = 1
-		command_string = "SETUP "
-		print("Heater %d Switched %d" % (heater, int(not self.tcs_heater[heater])))
-		for i in command_vector:
-			command_string = "".join((command_string, "%d," % i))
-		command_string = command_string[:-1]
-		reply = self.tcs_visa.query(command_string)
-		return
-
-
-# calibration parameters for temperature sensors
-calibrations = {
-	"SO703": [7318.782092, -13274.53584, 10276.68481, -4398.202411, 1123.561007, -171.3095557, 14.43456504, -0.518534965],
-	"SO914": [
-		5795.148097375, -11068.032226486, 9072.821104899, -4133.466851312,
-		1129.955799406, -185.318021359, 16.881907269, -0.658939155
-	],
-	"MATS56": [19.68045382, -20.19660902, 10.13318296, -2.742724207, 0.385556989, -0.022178276],
-	"CERNOX": [4.62153, -1.17709, -0.222229, -2.3114e-11]
-}
 
 
 if __name__ == '__main__':
 
-	# Initialize a PID controller
+	# Initialize a PID controller for the 4He Pot
+	# 7/9/2014 p=300 i=1 unstable
+	# 20/10/2015 p=60 i=1
+	pid = PIDControl.PID(P=75.0,I=.5,D=0,Derivator=0,Integrator=0,Integrator_max=500,Integrator_min=-50)
 
 	control = TControl()
 
-	# TODO : use dictionary to link channel sensor name
-	#sensor_channels = {0:"SO703",5:"CERNOX"}
-	#channel = 5
-	#control.set_pico_channel(channel)
-	#control.sensor = sensor_channels[channel]
-	control.set_pico_channel(5)  # ch5 for CERNOX. Do not use below 1K
-	control.sensor = "CERNOX"
+	control.GetLoopParams()
+	control.ReadTempHeater()
+	control.PrintStatus()
 
-	# Main loop
-	control.read_tcs()
+	control.SetTemp[2] = 3.7 # Set temperature for the He Pot
+	pid.setPoint(control.SetTemp[2])
 
-	while True:
+	while 1:
 
 		# Read the picowatt and calculate the temperature
-		control.read_pico()
-		control.calc_temperature(calibrations[control.sensor])
-		control.update_at_set()
-		control.update_status_msg()
+		control.ReadTempHeater()
+		control.UpdateAtSet()
+		control.UpdateStatusMsg()
 
-		# Push the reading to clients
-		#?
-		for j in control.server.handlers:
-			j.to_send = f"{control.temperature:.3f} {control.status_msg:d}".encode()
-			socket_msg = j.received_data
-			if socket_msg:
-				control.read_msg(socket_msg)
-		asyncore.loop(count=1, timeout=0.001)
+		# Push the readings to clients and read messages
+		for j in control.Server.handlers:
+			j.to_send = ",%.4f %.4f %.4f %.4f %d" % (control.Temperature[0], control.Temperature[1], control.HeaterCurrent[0], control.HeaterCurrent[1], control.StatusMsg)
+			SocketMsg = j.received_data
+			if SocketMsg:
+				control.ReadMsg(SocketMsg)
+		asyncore.loop(count=1,timeout=0.001)
+
 
 		# if we are sweeping we do some things specific to the sweep
-		if control.sweep_mode:
-			control.sweep_control()
+		if control.SweepMode:
+			control.SweepControl()
 
 		# check if we should send an update
-		update_time = datetime.now() - control.last_status_time
-		if update_time.seconds/60.0 >= control.status_interval:
-			control.print_status()
+		UpdateTime = datetime.now() - control.LastStatusTime
+		if UpdateTime.seconds/60.0 >= control.StatusInterval:
+			control.PrintStatus()
+		#	print "%.3f, %.3f" % (pid.P_value,pid.I_value)
 
-		new_pid = control.pid.update(control.temperature)
-		try:
-			control.pid_output = int(new_pid)
-		except:
-			control.pid_output = 0
-			pass
+		# Now we do some PID stuff in software to control the He Pot
+		NEWPID = pid.update(control.Temperature[2])
 
-		if control.pid_output < 0:
-			control.pid_output = 0
-		elif control.pid_output > control.max_current:
-			control.pid_output = control.max_current
+		if NEWPID > 120.0:
+			NEWPID = 120.0
+		elif NEWPID < 0.0:
+			NEWPID = 0.0
+		control.Visa.write("".join(("ANALOG 1,0,2,,,,,%.2f" % NEWPID)))
 
-		if control.pid_output > 0 and control.tcs_heater[2] == 0:               #?
-			# status is go to set and heater is off --> turn it on
-			control.set_tcs(2, control.pid_output)
-			control.tcs_switch_heater(2)
-			control.read_tcs()
-		elif control.pid_output <= 0 and control.tcs_heater[2] == 1:
-			# status is go to set and heater is off --> turn it on
-			control.tcs_switch_heater(2)
-			control.set_tcs(2, 0)
-			control.read_tcs()
-		elif control.pid_output >= 0 and control.tcs_heater[2] == 1:
-			control.set_tcs(2, control.pid_output)
-			control.tcs_current[2] = control.pid_output
+		time.sleep(0.4)
 
-		time.sleep(0.5)
-
-	control.tcs_visa.close()
+	control.Visa.close()
