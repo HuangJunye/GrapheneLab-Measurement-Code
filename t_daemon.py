@@ -20,13 +20,13 @@ from collections import deque
 from datetime import datetime
 
 import numpy as np
-#import logging
+import logging
 
 import utils.pid_control as pid_control
 import utils.socket_subs as socket_subs
 import utils.visa_subs as visa_subs
 
-#logging.basicConfig(filename='temp.log', filemode='a', format='%(asctime)s,%(message)s', level=logging.DEBUG)
+logging.basicConfig(filename='temp.log', filemode='a', format='%(asctime)s,%(message)s', level=logging.DEBUG)
 
 class TControl:
 
@@ -286,11 +286,11 @@ class TControl:
 
 	def print_status(self):
 		status_string = "%s = %.2f K; PID output = %d; " % (self.sensor, self.temperature, self.pid_output)
-		#temp_string = "%.3f," % self.temperature
+		temp_string = "%.3f," % self.temperature
 		status_string += "Status message = %d; " % self.status_msg
 		status_string += "P = %.2f, I = %.2f, D = %.2f\n" % (self.pid.p_value, self.pid.i_value, self.pid.d_value)
 		print(status_string)
-		#logging.debug(temp_string)
+		logging.debug(temp_string)
 		self.last_status_time = datetime.now()
 		return
 
