@@ -48,7 +48,7 @@ class TControl():
 	# Initialization call, initialize LS340 visa and start the server
 	# server always runs at 18871
 	def __init__(self):
-		self.visa_subs = visa_subs.instrument("GPIB::12::INSTR")
+		self.visa = visa_subs.instrument("GPIB::12::INSTR")
 		# start the server
 		address = ('localhost',18871)
 		self.server = socket_subs.SockServer(address)
@@ -108,15 +108,15 @@ class TControl():
 		self.last_status_time = datetime.now()
 
 		# Turn off ramp mode
-		self.visa_subs.write("RAMP 1,0,0")
-		#self.visa_subs.write("RAMP 2,1,1.0")
-		self.visa_subs.write("RAMP 2,0.0,0.0")
+		self.visa.write("RAMP 1,0,0")
+		#self.visa.write("RAMP 2,1,1.0")
+		self.visa.write("RAMP 2,0.0,0.0")
 
 		return
 
 	# The ls340 often formats replies X,Y,Z -> return selection of values
 	def ls_340_ask_multi(self,Query,Return):
-		reply = self.visa_subs.ask(Query)
+		reply = self.visa.ask(Query)
 		reply = reply.split(",")
 		answer = list()
 		for i in Return:
@@ -132,7 +132,7 @@ class TControl():
 			reply = self.ls_340_ask_multi(" ".join(("CSET?","%d" % v)),[2])
 			self.loop_enable[i] = bool(int(reply[0]))
 			# Control mode
-			reply = self.visa_subs.ask(" ".join(("CMODE?","%d" % v)))
+			reply = self.visa.ask(" ".join(("CMODE?","%d" % v)))
 			if reply == "2":
 				self.zone_control[i] = True
 			else:
@@ -142,7 +142,7 @@ class TControl():
 			for j,u in enumerate(reply):
 				self.pid_vals[j,i] = float(u)
 			# set_points
-			reply = self.visa_subs.ask(" ".join(("SETP?","%d" % (i+1))))
+			reply = self.visa.ask(" ".join(("SETP?","%d" % (i+1))))
 			self.set_temp[i] = float(reply)
 
 		return
@@ -153,7 +153,7 @@ class TControl():
 		old_temp = self.temperature
 		for i,v in enumerate(self.sensor_location):
 			# temperature
-			reply = self.visa_subs.ask(" ".join(("KRDG?","%s" % v)))
+			reply = self.visa.ask(" ".join(("KRDG?","%s" % v)))
 			try:
 				self.temperature[i] = float(reply)
 			except ValueError:
@@ -162,7 +162,7 @@ class TControl():
 
 		# read the heaters
 		for i,v in enumerate(self.heater_command):
-			htr_reply = self.visa_subs.ask(v)
+			htr_reply = self.visa.ask(v)
 			try:
 				self.heater_current[i] = float(htr_reply)
 			except ValueError:
@@ -188,7 +188,7 @@ class TControl():
 	def write_set_point(self):
 
 		for i,v in enumerate(self.loop_number):
-			self.visa_subs.write("".join(("SETP ","%d," % v, "%.3f" % self.set_temp[i])))
+			self.visa.write("".join(("SETP ","%d," % v, "%.3f" % self.set_temp[i])))
 
 		return
 
@@ -207,8 +207,8 @@ class TControl():
 					if self.sweep_mode:
 						# We are sweeping so kill the sweep
 						print "Killing sweep..."
-						self.visa_subs.write("RAMP 1,0,0")
-						self.visa_subs.write("RAMP 2,1,3.0")
+						self.visa.write("RAMP 1,0,0")
+						self.visa.write("RAMP 2,1,3.0")
 					self.update_set_temp(new_set)
 					# Set at set to be false and write the new set point
 					self.at_set = False
@@ -230,8 +230,8 @@ class TControl():
 					else:
 						self.sweep_direction = -1.0
 					# Put the LS340 into ramp mode
-					self.visa_subs.write("RAMP 1,1,%.3f" % self.sweep_rate)
-					self.visa_subs.write("RAMP 2,1,%.3f" % self.sweep_rate)
+					self.visa.write("RAMP 1,1,%.3f" % self.sweep_rate)
+					self.visa.write("RAMP 2,1,%.3f" % self.sweep_rate)
 					self.at_set = False
 					self.sweep_time_length = abs(self.set_temp[1] - self.sweep_finish)/self.sweep_rate
 					print "Got temperature sweep to %.2f K at %.2f K/min... Sweep takes %.2f minutes, maximum over time is %.2f" % (self.sweep_finish, self.sweep_rate, self.sweep_time_length, self.sweep_max_over_time)
@@ -293,8 +293,8 @@ class TControl():
 
 		if sweep_finished:
 			# The sweep is finished stop ramping and change the mode
-			self.visa_subs.write("RAMP 1,0,0")
-			self.visa_subs.write("RAMP 2,1,3.0")
+			self.visa.write("RAMP 1,0,0")
+			self.visa.write("RAMP 2,1,3.0")
 			# Write the set_point to the current temperature
 			self.update_set_temp(self.temperature[1])
 			self.write_set_point()
@@ -381,8 +381,6 @@ if __name__ == '__main__':
 			new_pid = 120.0
 		elif new_pid < 0.0:
 			new_pid = 0.0
-		control.visa_subs.write("".join(("ANALOG 1,0,2,,,,,%.2f" % new_pid)))
+		control.visa.write("".join(("ANALOG 1,0,2,,,,,%.2f" % new_pid)))
 
 		time.sleep(0.4)
-
-	control.visa_subs.close()
