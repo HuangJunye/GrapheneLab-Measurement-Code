@@ -13,37 +13,22 @@ last edited : August 2013
 	The daemon listens for commands to change the control loop or set_point
 	The daemon broadcasts the current temperature
 
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	temperature units are Kelvin
-	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-ToDo:
-
-	Listen
-	Broadcast
-	Initialize
-	ReadPico
-	CalcPID
-	SetTCS
-
-"""
-
+import asyncorey
 import logging
 import visa as visa
 import string as string
 import re as res
 import time
-import numpy as np
-import asyncore
 from datetime import datetime
 
+import numpy as np
 import utils.pid_control as pid_control
 import utils.socket_subs as socket_subs
 import utils.visa_subs as visa_subs
 
 logging.basicConfig(filename='temp.log', filemode='a', format='%(asctime)s,%(message)s', level=logging.DEBUG)
 
-class TControl():
+class TControl:
 
 	# Initialization call, initialize LS340 visa and start the server
 	# server always runs at 18871
@@ -192,6 +177,20 @@ class TControl():
 
 		return
 
+	# Update the parameter at_set for the probe
+	def update_at_set(self):
+		set = False
+		# The stability measure is v crude
+		stable = False
+		# 1 = Sweep
+		error_factor = abs(self.temperature[1] - self.set_temp[1])/self.temperature[1]
+		delta_temp_factor = abs(self.delta_temp[1])/self.temperature[1]
+		if error_factor < self.error_temp:
+			set = True
+		if delta_temp_factor < self.error_delta_temp:
+			stable = True
+		self.at_set = set and stable
+		return
 
 	# Interpret a message from the socket, current possible messages are
 	# SET ...  -  set probe the temperature
@@ -259,21 +258,6 @@ class TControl():
 
 		return
 
-
-	# Update the parameter at_set for the probe
-	def update_at_set(self):
-		set = False
-		# The stability measure is v crude
-		stable = False
-		# 1 = Sweep
-		error_factor = abs(self.temperature[1] - self.set_temp[1])/self.temperature[1]
-		delta_temp_factor = abs(self.delta_temp[1])/self.temperature[1]
-		if error_factor < self.error_temp:
-			set = True
-		if delta_temp_factor < self.error_delta_temp:
-			stable = True
-		self.at_set = set and stable
-		return
 
 	def sweep_control(self):
 
