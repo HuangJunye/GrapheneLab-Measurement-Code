@@ -12,8 +12,8 @@ last edited : August 2013
 
 	The daemon listens for commands to change the control loop or set_point
 	The daemon broadcasts the current temperature
-
-import asyncorey
+"""
+import asyncore
 import logging
 import visa as visa
 import string as string
@@ -205,7 +205,7 @@ class TControl:
 				if abs(self.set_temp[1]-new_set) > 0.05:
 					if self.sweep_mode:
 						# We are sweeping so kill the sweep
-						print "Killing sweep..."
+						print("Killing sweep...")
 						self.visa.write("RAMP 1,0,0")
 						self.visa.write("RAMP 2,1,3.0")
 					self.update_set_temp(new_set)
@@ -213,7 +213,7 @@ class TControl:
 					self.at_set = False
 					self.sweep_mode = False
 					self.write_set_point()
-					print "Got probe set point from socket %.2f\n" % self.set_temp[1]
+					print("Got probe set point from socket %.2f\n" % self.set_temp[1])
 			except:
 				pass
 
@@ -233,14 +233,15 @@ class TControl:
 					self.visa.write("RAMP 2,1,%.3f" % self.sweep_rate)
 					self.at_set = False
 					self.sweep_time_length = abs(self.set_temp[1] - self.sweep_finish)/self.sweep_rate
-					print "Got temperature sweep to %.2f K at %.2f K/min... Sweep takes %.2f minutes, maximum over time is %.2f" % (self.sweep_finish, self.sweep_rate, self.sweep_time_length, self.sweep_max_over_time)
+					print("Got temperature sweep to %.2f K at %.2f K/min... Sweep takes %.2f minutes, maximum over time is %.2f"
+						% (self.sweep_finish, self.sweep_rate, self.sweep_time_length, self.sweep_max_over_time))
 					# Write the finish temp
 					self.update_set_temp(self.sweep_finish)
 					# Write the set_point to start the ramp
 					self.write_set_point()
 					self.sweep_mode = True
 					self.sweep_start_time = datetime.now()
-					print "Starting the sweep\n"
+					print("Starting the sweep\n")
 			except:
 				pass
 
@@ -268,10 +269,10 @@ class TControl:
 		if dt > (self.sweep_time_length + self.sweep_max_over_time):
 			# The sweep ran out of time, stop it
 			sweep_finished = True
-			print "Sweep over time... Finishing..."
+			print("Sweep over time... Finishing...")
 		elif (self.temperature[1] - self.sweep_finish)*self.sweep_direction > 0.0:
 			sweep_finished = True
-			print "Final temperature reached... Finishing..."
+			print("Final temperature reached... Finishing...")
 		else:
 			sweep_finished = False
 
@@ -310,7 +311,7 @@ class TControl:
 
 		status_string += "Status message = %d\n" % self.status_msg
 
-		print status_string
+		print(status_string)
 		logging.debug(temp_string) # log temperature reading to 'temp.log'
 		self.last_status_time = datetime.now()
 		return
@@ -321,7 +322,7 @@ if __name__ == '__main__':
 	# Initialize a PID controller for the 4He Pot
 	# 7/9/2014 p=300 i=1 unstable
 	# 20/10/2015 p=60 i=1
-	pid = pid_control.PID(P=75.0,I=.5,D=0,Derivator=0,Integrator=0,Integrator_max=500,Integrator_min=-50)
+	pid = pid_control.PID(p=75.0,i=.5,d=0,derivator=0,integrator=0,integrator_max=500,integrator_min=-50)
 
 	control = TControl()
 
