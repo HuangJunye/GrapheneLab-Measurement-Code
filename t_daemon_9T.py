@@ -331,7 +331,7 @@ if __name__ == '__main__':
 	control.print_status()
 
 	control.set_temp[2] = 3.7 # Set temperature for the He Pot
-	pid.set_point(control.set_temp[2])
+	pid.set_point = control.set_temp[2]
 
 	while 1:
 
