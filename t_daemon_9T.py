@@ -33,7 +33,7 @@ class TControl:
 	# Initialization call, initialize LS340 visa and start the server
 	# server always runs at 18871
 	def __init__(self):
-		self.visa = visa_subs.instrument("GPIB::12::INSTR")
+		self.visa = visa_subs.initialize_gpib(12, 0, query_delay="0.04")
 		# start the server
 		address = ('localhost',18871)
 		self.server = socket_subs.SockServer(address)
