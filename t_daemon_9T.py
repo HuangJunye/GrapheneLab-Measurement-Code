@@ -26,7 +26,7 @@ import utils.pid_control as pid_control
 import utils.socket_subs as socket_subs
 import utils.visa_subs as visa_subs
 
-logging.basicConfig(filename='temp.log', filemode='a', format='%(asctime)s,%(message)s', level=logging.DEBUG)
+logging.basicConfig(filename='temp.log', filemode='a', format='%(asctime)s,%(message)s', level=logging.WARNING)
 
 class TControl:
 
@@ -312,7 +312,7 @@ class TControl:
 		status_string += "Status message = %d\n" % self.status_msg
 
 		print(status_string)
-		logging.debug(temp_string) # log temperature reading to 'temp.log'
+		logging.warning(temp_string) # log temperature reading to 'temp.log'
 		self.last_status_time = datetime.now()
 		return
 
