@@ -26,19 +26,19 @@ ToDo:
 	setTCS
 
 """
-
-import utils.socket_subs as SocketUtils
+import asyncore
 import logging
 import visa as visa
-import utils.visa_subs as visaSubs
 import string as string
 import re as res
 import time
-import numpy as np
-import asyncore
-import utils.pid_control as PIDControl
 from scipy import interpolate
 from datetime import datetime
+
+import numpy as np
+import utils.pid_control as pid_control
+import utils.socket_subs as socket_subs
+import utils.visa_subs as visa_subs
 
 class TControl():
 
