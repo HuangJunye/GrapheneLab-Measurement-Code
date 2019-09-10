@@ -81,7 +81,7 @@ class TControl():
 		self.status = -1
 		# but there are only 2 loops :(
 		self.loop_number = [1,2]
-		self.zero_control = [False, False]
+		self.zone_control = [False, False]
 		self.loop_enable = [False, False]
 		self.pid_vals = np.empty((3,3))
 
@@ -146,9 +146,9 @@ class TControl():
 			# Control mode
 			reply = self.visa.ask(" ".join(("CMODE?","%d" % v)))
 			if reply == "2":
-				self.zero_control[i] = True
+				self.zone_control[i] = True
 			else:
-				self.zero_control[i] = False
+				self.zone_control[i] = False
 			# PIDs
 			reply = self.ls_340_ask_multi(" ".join(("PID?","%d" % v)),[0,1,2])
 			for j,u in enumerate(reply):
@@ -248,7 +248,8 @@ class TControl():
 					self.visa.write("RAMP 2,1,%.3f" % self.sweep_rate)
 					self.at_set = False
 					self.sweep_time_length = abs(self.set_temp[1] - self.sweep_finish)/self.sweep_rate
-					print("Got temperature sweep to %.2f K at %.2f K/min... Sweep takes %.2f minutes, maximum over time is %.2f" % (self.sweep_finish, self.sweep_rate, self.sweep_time_length, self.sweep_max_over_time))
+					print("Got temperature sweep to %.2f K at %.2f K/min... Sweep takes %.2f minutes, maximum over time is %.2f"
+						% (self.sweep_finish, self.sweep_rate, self.sweep_time_length, self.sweep_max_over_time))
 					# Write the finish temp
 					self.update_set_temp(self.sweep_finish)
 					# Write the set_point to start the ramp
