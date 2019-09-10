@@ -32,19 +32,19 @@ ToDo:
 	26.05.2017 Alex
 	read_all_temperature was updated. all temperatures are shown. Use only for cooling down process.
 """
-
-import utils.socket_subs as SocketUtils
+import asyncore
 import logging
 import visa as visa
-import utils.visa_subs as visa_subs
 import string as string
 import re as res
 import time
-import numpy as np
-import asyncore
-import utils.pid_control as PIDControl
 from scipy import interpolate
 from datetime import datetime
+
+import numpy as np
+import utils.pid_control as pid_control
+import utils.socket_subs as socket_subs
+import utils.visa_subs as visa_subs
 
 class TControl():
 
@@ -62,10 +62,10 @@ class TControl():
 	# Initialization call, initialize LS340 visa and start the server
 	# server always runs at 18871
 	def __init__(self):
-		self.visa = visa_subs.InitializeGPIB(12,0)
+		self.visa = visa_subs.initialize_gpib(12, 0, query_delay="0.04")
 		# start the server
 		address = ('localhost',18871)
-		self.server = SocketUtils.SockServer(address)
+		self.server = socket_subs.SockServer(address)
 
 		t_sensor_name = ["1st stage", "Shield", "2nd stage #1", "2nd Stage #2", "Magnet inner", "Magner outer", "Switch", "Magnet support", "He Pot", "VTI upper HEx"]
 		t_sensor_path="d:\eoin\programs\Thermometers\\"
@@ -246,7 +246,7 @@ class TControl():
 	# set ...  -  set probe the temperature
 	# SWP ...  -  sweep the probe temperature
 	def read_msg(self,msg):
-		 = msg.split(" ")
+		msg = msg.split(" ")
 
 		if msg[0] == "set":
 			try:
@@ -283,7 +283,8 @@ class TControl():
 					self.visa.write("RAMP 2,1,%.3f" % self.sweep_rate)
 					self.at_set = False
 					self.sweep_time_length = abs(self.set_temp[1] - self.sweep_finish)/self.sweep_rate
-					print("Got temperature sweep to %.2f K at %.2f K/min... Sweep takes %.2f minutes, maximum over time is %.2f" % (self.sweep_finish, self.sweep_rate, self.sweep_time_length, self.sweep_max_over_time))
+					print("Got temperature sweep to %.2f K at %.2f K/min... Sweep takes %.2f minutes, maximum over time is %.2f"
+						% (self.sweep_finish, self.sweep_rate, self.sweep_time_length, self.sweep_max_over_time))
 					# Write the finish temp
 					self.update_set_temp(self.sweep_finish)
 					# Write the setpoint to start the ramp
@@ -381,7 +382,7 @@ class TControl():
 if __name__ == '__main__':
 
 	# Initialize a PID controller for the 4He Pot
-	pid = PIDControl.PID(P=500,I=10.,D=0,Derivator=0,Integrator=0,Integrator_max=250,Integrator_min=-50)
+	pid = pid_control.PID(p=500,i=10.,d=0,derivator=0,integrator=0,integrator_max=250,integrator_min=-50)
 
 	control = TControl()
 
