@@ -294,7 +294,7 @@ class TControl():
 if __name__ == '__main__':
 
 	# Initialize a PID controller for the 4He Pot
-	pid = PIDControl.PID(P=500,I=3,D=0,Derivator=0,Integrator=0,Integrator_max=250,Integrator_min=-50)
+	pid = pid_control.PID(p=500,i=3,d=0,derivator=0,integrator=0,integrator_max=250,integrator_min=-50)
 
 	control = TControl()
 
