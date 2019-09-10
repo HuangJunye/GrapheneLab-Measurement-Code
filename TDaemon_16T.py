@@ -60,12 +60,12 @@ class TControl():
 	# Initialization call, initialize LS340 visa and start the server
 	# server always runs at 18871
 	def __init__(self):
-		self.visa = visa_subs.InitializeGPIB(12,0)
+		self.visa = visa_subs.initialize_gpib(12, 0, query_delay="0.04")
 		# start the server
 		address = ('localhost',18871)
-		self.server = socket_subs.Sockserver(address)
+		self.server = socket_subs.SockServer(address)
 
-		self.pot_visa = visa_subs.InitializeGPIB(6,0)
+		self.pot_visa = visa_subs.initialize_gpib(6, 0, query_delay="0.04")
 		self.pot_visa.write("FORM:ELEM READ")  #Configure the 2700 to only return resistance
 		calibration_path = "d:\eoin\programs\Thermometers\\11)He Pot.txt"
 		calibration = np.genfromtxt(calibration_path,skip_header=1)
