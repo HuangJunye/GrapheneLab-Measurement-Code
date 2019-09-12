@@ -223,12 +223,12 @@ class TControl():
 		return
 
 	# Interpret a message from the socket, current possible messages are
-	# set ...  -  set probe the temperature
+	# SET ...  -  set probe the temperature
 	# SWP ...  -  sweep the probe temperature
 	def read_msg(self,msg):
 		msg = msg.split(" ")
 
-		if msg[0] == "set":
+		if msg[0] == "SET":
 			try:
 				new_set = float(msg[1])
 				# Only interpret new set_points if the change is >50mK
@@ -239,7 +239,7 @@ class TControl():
 						self.visa.write("RAMP 1,0,0")
 						self.visa.write("RAMP 2,0,0")
 					self.update_set_temp(new_set)
-					# set at set to be false and write the new set point
+					# SET at set to be false and write the new set point
 					self.at_set = False
 					self.sweep_mode = False
 					self.write_set_point()
@@ -281,7 +281,7 @@ class TControl():
 			except:
 				pass
 
-		if msg[0] == "dt_ERROR":
+		if msg[0] == "DT_ERROR":
 			try:
 				self.error_delta_temp = float(msg[1])
 			except:
