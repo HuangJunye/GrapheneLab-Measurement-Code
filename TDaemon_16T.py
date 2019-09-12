@@ -44,6 +44,8 @@ import utils.pid_control as pid_control
 import utils.socket_subs as socket_subs
 import utils.visa_subs as visa_subs
 
+logging.basicConfig(filename='temp.log', filemode='a', format='%(asctime)s,%(message)s', level=logging.WARNING)
+
 class TControl:
 
 	"""
@@ -333,13 +335,15 @@ class TControl:
 
 	def print_status(self):
 		status_string = ""
+		temp_string = ""
 		for i,v in enumerate(self.temperature):
 			status_string += "%s = %.3f K; " % (self.sensor_name[i],self.temperature[i])
+			temp_string += "%.3f," % (self.temperature[i])
 
 		status_string += "He Pot Temp = %.2f K;" % self.pot_temperature
 		status_string += "status message = %d\n" % self.status_msg
 		print(status_string)
-
+		logging.warning(temp_string)
 		self.last_status_time = datetime.now()
 		return
 
