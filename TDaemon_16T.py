@@ -89,7 +89,7 @@ class TControl():
 		# Analog 2 = Probe
 		# so we have the commands to read the heaters
 		self.heater_command = ["HTR?", "AOUT?2"]
-		self.heater_current = np.zeros((2,))
+		self.heater_current = np.zeros((len(self.loop_number),))
 		self.delta_temp = np.zeros((2,))
 		self.max_set_temp = np.array([300.0,310.0])
 
@@ -214,7 +214,6 @@ class TControl():
 		# 1 = Sweep
 		error_factor = abs(self.temperature[1] - self.set_temp[1])/self.temperature[1]
 		delta_temp_factor = abs(self.delta_temp[1])/self.temperature[1]
-
 		if error_factor < self.error_temp:
 			set = True
 		if delta_temp_factor < self.error_delta_temp:
@@ -239,7 +238,7 @@ class TControl():
 						self.visa.write("RAMP 1,0,0")
 						self.visa.write("RAMP 2,0,0")
 					self.update_set_temp(new_set)
-					# SET at set to be false and write the new set point
+					# Set at set to be false and write the new set point
 					self.at_set = False
 					self.sweep_mode = False
 					self.write_set_point()
@@ -357,8 +356,7 @@ if __name__ == '__main__':
 	control.read_pot_temperature()
 	control.print_status()
 	#control.set_temp[2] = 3.7 # set temperature for the He Pot
-	pid.set_point(4.1)
-
+	pid.set_point = control.set_temp[1]
 	while 1:
 		# Read the picowatt and calculate the temperature
 		control.read_temp_heater()
