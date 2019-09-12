@@ -44,7 +44,7 @@ import utils.pid_control as pid_control
 import utils.socket_subs as socket_subs
 import utils.visa_subs as visa_subs
 
-class TControl():
+class TControl:
 
 	"""
 	Fort the 16T there are only 2 temperatures of interest the 1 - the VTI
@@ -110,13 +110,13 @@ class TControl():
 		self.sweep_time_length = 0.0
 		self.sweep_max_over_time = 15.0 # minutes
 
-		# status Parameters
+		# Status Parameters
 		# Modes are 0: set, 1: sweep
 		self.at_set = False
 		self.sweep_mode = False
 		self.status_msg = 0
 
-		# status events, every so often we push a status to the terminal
+		# Status events, every so often we push a status to the terminal
 		self.status_interval = 0.25 # minutes
 		self.last_status_time = datetime.now()
 
@@ -141,7 +141,7 @@ class TControl():
 
 		for i,v in enumerate(self.loop_number):
 			# enabled?
-			reply = self.ls_340_ask_multi(" ".join(("Cset?","%d" % v)),[2])
+			reply = self.ls_340_ask_multi(" ".join(("CSET?","%d" % v)),[2])
 			self.loop_enable[i] = bool(int(reply[0]))
 			# Control mode
 			reply = self.visa.ask(" ".join(("CMODE?","%d" % v)))
@@ -154,7 +154,7 @@ class TControl():
 			for j,u in enumerate(reply):
 				self.pid_vals[j,i] = float(u)
 			# set_points
-			reply = self.visa.ask(" ".join(("setP?","%d" % (i+1))))
+			reply = self.visa.ask(" ".join(("SETP?","%d" % (i+1))))
 			self.set_temp[i] = float(reply)
 
 		return
@@ -202,7 +202,7 @@ class TControl():
 	def write_set_point(self):
 
 		for i,v in enumerate(self.loop_number):
-			self.visa.write("".join(("setP ","%d," % v, "%.3f" % self.set_temp[i])))
+			self.visa.write("".join(("SETP ","%d," % v, "%.3f" % self.set_temp[i])))
 
 		return
 
