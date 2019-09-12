@@ -206,6 +206,21 @@ class TControl():
 
 		return
 
+	# Update the parameter at_set for the probe
+	def update_at_set(self):
+		set = False
+		# The stability measure is v crude
+		stable = False
+		# 1 = Sweep
+		error_factor = abs(self.temperature[1] - self.set_temp[1])/self.temperature[1]
+		delta_temp_factor = abs(self.delta_temp[1])/self.temperature[1]
+
+		if error_factor < self.error_temp:
+			set = True
+		if delta_temp_factor < self.error_delta_temp:
+			stable = True
+		self.at_set = set and stable
+		return
 
 	# Interpret a message from the socket, current possible messages are
 	# set ...  -  set probe the temperature
@@ -274,22 +289,6 @@ class TControl():
 
 		return
 
-
-	# Update the parameter at_set for the probe
-	def update_at_set(self):
-		set = False
-		# The stability measure is v crude
-		stable = False
-		# 1 = Sweep
-		error_factor = abs(self.temperature[1] - self.set_temp[1])/self.temperature[1]
-		delta_temp_factor = abs(self.delta_temp[1])/self.temperature[1]
-
-		if error_factor < self.error_temp:
-			set = True
-		if delta_temp_factor < self.error_delta_temp:
-			stable = True
-		self.at_set = set and stable
-		return
 
 	def sweep_control(self):
 
