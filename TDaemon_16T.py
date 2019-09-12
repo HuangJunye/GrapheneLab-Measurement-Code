@@ -213,6 +213,7 @@ class TControl:
 		# 1 = Sweep
 		error_factor = abs(self.temperature[1] - self.set_temp[1])/self.temperature[1]
 		delta_temp_factor = abs(self.delta_temp[1])/self.temperature[1]
+
 		if error_factor < self.error_temp:
 			set = True
 		if delta_temp_factor < self.error_delta_temp:
