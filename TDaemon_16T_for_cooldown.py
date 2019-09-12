@@ -186,6 +186,7 @@ class TControl:
 		t_sensor_path="d:\eoin\programs\Thermometers\\"
 		t_sensor_calibration = ["1)1st Stage.txt", "2)Shield.txt", "3)2nd Stage 1.txt", "4)2nd Stage 2.txt", "5)Magnet Inner.txt", "6)Magnet Outer.txt", "7)Switch.txt", "8)Magnet Support.txt", "9)He Pot.txt", "10)VTI Upper HEx.txt"]
 		#t_sensor_calibration = ["1)1st Stage.txt", "2)Shield.txt", "3)2nd Stage 1.txt", "4)2nd Stage 2.txt", "5)Magnet Inner.txt", "6)Magnet Outer.txt", "7)Switch.txt", "8)Magnet Support.txt", "9)He Pot.txt", "10)VTI Upper HEx.txt"]
+		temp_string = ''
 		for i in range(1, 10):
 			self.pot_visa.write("INIT:CONT OFF")
 			Ch = 100 + i
@@ -200,9 +201,12 @@ class TControl:
 			self.he_pot_fn = interpolate.interp1d(self.calibration_x[:,i-1], self.calibration_y[:,i-1])
 			res=self.he_pot_fn(res)
 			print("%s = %f K" % (t_sensor_name[i-1], res))
+			temp_string += "%.3f," % res
 			#self.pot_temperature = res[8]
 			if Ch==109:
 				self.pot_temperature = res
+
+		logging.warning(temp_string)				  
 		return
 
 	def read_temp_heater(self):
@@ -370,15 +374,12 @@ class TControl:
 
 	def print_status(self):
 		status_string = ""
-		temp_string = ""
 		for i,v in enumerate(self.temperature):
 			status_string += "%s = %.3f K; " % (self.sensor_name[i],self.temperature[i])
-			temp_string += "%.3f," % (self.temperature[i])
 
 		status_string += "He Pot Temp = %.2f K;" % self.pot_temperature
 		status_string += "status message = %d\n" % self.status_msg
 		print(status_string)
-		logging.warning(temp_string)
 		self.last_status_time = datetime.now()
 		return
 
