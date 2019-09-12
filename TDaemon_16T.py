@@ -198,7 +198,6 @@ class TControl:
 
 		return
 
-
 	def write_set_point(self):
 
 		for i,v in enumerate(self.loop_number):

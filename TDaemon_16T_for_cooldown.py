@@ -78,9 +78,8 @@ class TControl():
 			self.calibration_x[:,i-1] = np.flipud(calibration_xy[:,1])
 			self.calibration_y[:,i-1] = np.flipud(calibration_xy[:,0])
 
-		self.pot_visa = visa_subs.InitializeGPIB(6,0)
+		self.pot_visa = visa_subs.initialize_gpib(6, 0, query_delay="0.04")
 		self.pot_visa.write("FORM:ELEM READ")  #Configure the 2700 to only return resistance
-
 
 		self.temperature = np.zeros((2,))
 		self.pot_temperature = 0.0
@@ -99,7 +98,7 @@ class TControl():
 		# Analog 2 = Probe
 		# so we have the commands to read the heaters
 		self.heater_command = ["HTR?", "AOUT?2"]
-		self.heater_current = np.zeros((2,))
+		self.heater_current = np.zeros((len(self.loop_number),))
 		self.delta_temp = np.zeros((2,))
 		self.max_set_temp = np.array([300.0,310.0])
 
@@ -120,13 +119,13 @@ class TControl():
 		self.sweep_time_length = 0.0
 		self.sweep_max_over_time = 15.0 # minutes
 
-		# status Parameters
+		# Status Parameters
 		# Modes are 0: set, 1: sweep
 		self.at_set = False
 		self.sweep_mode = False
 		self.status_msg = 0
 
-		# status events, every so often we push a status to the terminal
+		# Status events, every so often we push a status to the terminal
 		self.status_interval = 0.25 # minutes
 		self.last_status_time = datetime.now()
 
@@ -146,12 +145,12 @@ class TControl():
 
 		return answer
 
-	# Get the loop paramters: enabled, control mode, PID, setpoints
+	# Get the loop paramters: enabled, control mode, PID, set_points
 	def get_loop_params(self):
 
 		for i,v in enumerate(self.loop_number):
 			# enabled?
-			reply = self.ls_340_ask_multi(" ".join(("Cset?","%d" % v)),[2])
+			reply = self.ls_340_ask_multi(" ".join(("CSET?","%d" % v)),[2])
 			self.loop_enable[i] = bool(int(reply[0]))
 			#print "%s" % reply
 			# Control mode
@@ -166,8 +165,8 @@ class TControl():
 			#print "%s" % reply
 			for j,u in enumerate(reply):
 				self.pid_vals[j,i] = float(u)
-			# setpoints
-			reply = self.visa.ask(" ".join(("setP?","%d" % (i+1))))
+			# set_points
+			reply = self.visa.ask(" ".join(("SETP?","%d" % (i+1))))
 			#print "%s" % reply
 			self.set_temp[i] = float(reply)
 
@@ -238,20 +237,36 @@ class TControl():
 	def write_set_point(self):
 
 		for i,v in enumerate(self.loop_number):
-			self.visa.write("".join(("setP ","%d," % v, "%.3f" % self.set_temp[i])))
+			self.visa.write("".join(("SETP ","%d," % v, "%.3f" % self.set_temp[i])))
 
 		return
 
+	# Update the parameter at_set for the probe
+	def update_at_set(self):
+		set = False
+		# The stability measure is v crude
+		stable = False
+		# 1 = Sweep
+		error_factor = abs(self.temperature[1] - self.set_temp[1])/self.temperature[1]
+		delta_temp_factor = abs(self.delta_temp[1])/self.temperature[1]
+
+		if error_factor < self.error_temp:
+			set = True
+		if delta_temp_factor < self.error_delta_temp:
+			stable = True
+		self.at_set = set and stable
+		return
+
 	# Interpret a message from the socket, current possible messages are
-	# set ...  -  set probe the temperature
+	# SET ...  -  set probe the temperature
 	# SWP ...  -  sweep the probe temperature
 	def read_msg(self,msg):
 		msg = msg.split(" ")
 
-		if msg[0] == "set":
+		if msg[0] == "SET":
 			try:
 				new_set = float(msg[1])
-				# Only interpret new setpoints if the change is >50mK
+				# Only interpret new set_points if the change is >50mK
 				if abs(self.set_temp[1]-new_set) > 0.05:
 					if self.sweep_mode:
 						# We are sweeping so kill the sweep
@@ -259,7 +274,7 @@ class TControl():
 						self.visa.write("RAMP 1,0,0")
 						self.visa.write("RAMP 2,0,0")
 					self.update_set_temp(new_set)
-					# set at set to be false and write the new set point
+					# Set at set to be false and write the new set point
 					self.at_set = False
 					self.sweep_mode = False
 					self.write_set_point()
@@ -287,7 +302,7 @@ class TControl():
 						% (self.sweep_finish, self.sweep_rate, self.sweep_time_length, self.sweep_max_over_time))
 					# Write the finish temp
 					self.update_set_temp(self.sweep_finish)
-					# Write the setpoint to start the ramp
+					# Write the set_point to start the ramp
 					self.write_set_point()
 					self.sweep_mode = True
 					self.sweep_start_time = datetime.now()
@@ -301,7 +316,7 @@ class TControl():
 			except:
 				pass
 
-		if msg[0] == "dt_ERROR":
+		if msg[0] == "DT_ERROR":
 			try:
 				self.error_delta_temp = float(msg[1])
 			except:
@@ -309,22 +324,6 @@ class TControl():
 
 		return
 
-
-	# Update the parameter at_set for the probe
-	def update_at_set(self):
-		set = False
-		# The stability measure is v crude
-		stable = False
-		# 1 = Sweep
-		error_factor = abs(self.temperature[1] - self.set_temp[1])/self.temperature[1]
-		delta_temp_factor = abs(self.delta_temp[1])/self.temperature[1]
-
-		if error_factor < self.error_temp:
-			set = True
-		if delta_temp_factor < self.error_delta_temp:
-			stable = True
-		self.at_set = set and stable
-		return
 
 	def sweep_control(self):
 
@@ -367,13 +366,13 @@ class TControl():
 		return
 
 	def print_status(self):
-		status_srting = ""
+		status_string = ""
 		for i,v in enumerate(self.temperature):
-			status_srting += "%s = %.3f K; " % (self.sensor_name[i],self.temperature[i])
+			status_string += "%s = %.3f K; " % (self.sensor_name[i],self.temperature[i])
 
-		status_srting += "He Pot Temp = %.2f K;" % self.pot_temperature
-		status_srting += "status message = %d\n" % self.status_msg
-		print(status_srting)
+		status_string += "He Pot Temp = %.2f K;" % self.pot_temperature
+		status_string += "status message = %d\n" % self.status_msg
+		print(status_string)
 
 		self.last_status_time = datetime.now()
 		return
@@ -392,7 +391,7 @@ if __name__ == '__main__':
 	control.read_all_temperature()
 	control.print_status()
 	#control.set_temp[2] = 3.7 # set temperature for the He Pot
-	pid.setPoint(4.1)
+	pid.set_point = control.set_temp[1]
 
 	while 1:
 
