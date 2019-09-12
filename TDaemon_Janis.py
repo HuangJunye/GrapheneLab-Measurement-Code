@@ -45,10 +45,10 @@ class TControl():
 	# Initialization call, initialize LS340 visa and start the server
 	# server always runs at 18871
 	def __init__(self):
-		self.visa = visa.instrument("GPIB::27::INSTR")
+		self.visa = visa_subs.initialize_gpib("GPIB::27::INSTR")
 		# start the server
 		address = ('localhost', 18871)
-		self.server = SocketUtils.SockServer(address)
+		self.server = socket_subs.SockServer(address)
 		self.temperature = np.zeros((2,))
 		self.sensor_name = ["Probe", "VTI"]
 		self.sensor_location = ["A","B"]
@@ -62,6 +62,7 @@ class TControl():
 		self.heater_current = np.zeros((3,))
 		self.delta_temp = np.zeros((2,))
 		self.max_set_temp = np.array([400.0,400.0,400.0])
+
 		# The acceptable error in temperature as a factor of the
 		# set temperature e.g. 2.0 K x 0.005 = 0.01 K
 		self.error_temp = 0.001
