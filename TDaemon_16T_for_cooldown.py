@@ -46,7 +46,8 @@ import utils.pid_control as pid_control
 import utils.socket_subs as socket_subs
 import utils.visa_subs as visa_subs
 
-class TControl():
+logging.basicConfig(filename='temp_cooldown.log', filemode='a', format='%(asctime)s,%(message)s', level=logging.WARNING)
+class TControl:
 
 	"""
 	For the 16T there are only 2 temperatures of interest the 1 - the VTI
@@ -345,12 +346,14 @@ class TControl():
 			# The sweep is finished stop ramping and change the mode
 			self.visa.write("RAMP 1,0,0")
 			self.visa.write("RAMP 2,0,0")
-			# Write the setpoint to the current temperature
+			# Write the set_point to the current temperature
 			self.update_set_temp(self.temperature[1])
 			self.write_set_point()
 			self.sweep_mode = False
 
 		return
+
+
 
 	def update_status_msg(self):
 		# TDaemon status messages:
@@ -367,13 +370,15 @@ class TControl():
 
 	def print_status(self):
 		status_string = ""
+		temp_string = ""
 		for i,v in enumerate(self.temperature):
 			status_string += "%s = %.3f K; " % (self.sensor_name[i],self.temperature[i])
+			temp_string += "%.3f," % (self.temperature[i])
 
 		status_string += "He Pot Temp = %.2f K;" % self.pot_temperature
 		status_string += "status message = %d\n" % self.status_msg
 		print(status_string)
-
+		logging.warning(temp_string)
 		self.last_status_time = datetime.now()
 		return
 
