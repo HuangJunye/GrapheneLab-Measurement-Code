@@ -50,7 +50,7 @@ date = str(time.strftime("%Y%m%d", time.localtime()))
 file_name = 'temp_cooldown.log_'+date
 
 logging.basicConfig(filename=file_name, filemode='a', format='%(asctime)s,%(message)s', level=logging.WARNING)
-title = ['a','b','c','d','e','f','g']
+title = 'a, b, c, d, e, f, g'
 logging.warning(title)
 
 class TControl:
