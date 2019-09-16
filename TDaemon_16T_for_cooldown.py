@@ -46,7 +46,13 @@ import utils.pid_control as pid_control
 import utils.socket_subs as socket_subs
 import utils.visa_subs as visa_subs
 
-logging.basicConfig(filename='temp_cooldown.log', filemode='a', format='%(asctime)s,%(message)s', level=logging.WARNING)
+date = str(time.strftime("%Y%m%d", time.localtime()))
+file_name = 'temp_cooldown.log_'+date
+
+logging.basicConfig(filename=file_name, filemode='a', format='%(asctime)s,%(message)s', level=logging.WARNING)
+title = ['a','b','c','d','e','f','g']
+logging.warning(title)
+
 class TControl:
 
 	"""
@@ -206,7 +212,7 @@ class TControl:
 			if Ch==109:
 				self.pot_temperature = res
 
-		logging.warning(temp_string)				  
+		logging.warning(temp_string)
 		return
 
 	def read_temp_heater(self):
