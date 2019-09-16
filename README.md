@@ -1,6 +1,6 @@
-# GrapheneLab Measurement Code
+# GrapheneLab Measurement Code (gcodes)
 
-This is a Python-based transport measurement code used in GrapheneLab in National University of Singapore. The code was originally developed by Eoin O'Farrell and currently maintained by Huang Junye.
+This is a Python-based transport measurement code used in GrapheneLab in National University of Singapore. The code was originally developed by [Eoin O'Farrell](https://github.com/ectof) and currently maintained by [Huang Junye](https://github.com/HuangJunye).
 
 
 ## There is QCoDeS why would I want to use gcodes?
