@@ -46,12 +46,9 @@ import utils.pid_control as pid_control
 import utils.socket_subs as socket_subs
 import utils.visa_subs as visa_subs
 
-date = str(time.strftime("%Y%m%d", time.localtime()))
+date = time.strftime("%Y%m%d", time.localtime())
 file_name = 'temperature_'+date+'.log'
-
-logging.basicConfig(filename=file_name, filemode='a', format='%(asctime)s,%(message)s', level=logging.WARNING)
-title = 'a, b, c, d, e, f, g'
-logging.warning(title)
+file_exist = os.path.exists(file_name)
 
 class TControl:
 
@@ -212,7 +209,17 @@ class TControl:
 			if Ch==109:
 				self.pot_temperature = res
 
-		logging.warning(temp_string)
+		if file_exist:
+			logging.warning(t)
+		else:
+			f = open(file_name,'a')
+			header = 'DATE, A, B, C, D, E, F, G'
+			f.write(header)
+			f.write('\n')
+			f.close()
+
+			logging.basicConfig(filename=file_name, filemode='a', format='%(asctime)s,%(message)s', level=logging.WARNING)
+			logging.warning(t)
 		return
 
 	def read_temp_heater(self):
