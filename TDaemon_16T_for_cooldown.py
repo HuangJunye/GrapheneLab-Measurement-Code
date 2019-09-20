@@ -40,16 +40,12 @@ import re as res
 import time
 from scipy import interpolate
 from datetime import datetime
+import os
 
 import numpy as np
 import utils.pid_control as pid_control
 import utils.socket_subs as socket_subs
 import utils.visa_subs as visa_subs
-
-date_begin = datetime.datetime.now()
-date = time.strftime("%Y%m%d", time.localtime())
-file_name = 'temperature_'+date+'.log'
-file_exist = os.path.exists(file_name)
 
 class TControl:
 
@@ -66,7 +62,7 @@ class TControl:
 	"""
 	# Initialization call, initialize LS340 visa and start the server
 	# server always runs at 18871
-	def __init__(self):
+	def __init__(self, file_name):
 		self.visa = visa_subs.initialize_gpib(12, 0, query_delay="0.04")
 		# start the server
 		address = ('localhost',18871)
@@ -139,7 +135,8 @@ class TControl:
 		self.visa.write("RAMP 2,0,0")
 
 		#set date interval to creat noew log file, default = 1 day(s)
-		date_interval = 1
+		self.date_interval = 1
+		self.file_name = file_name
 
 		return
 
@@ -213,26 +210,26 @@ class TControl:
 			if Ch==109:
 				self.pot_temperature = res
 
-		date_now = datetime.datetime.now()
+		date_now = datetime.now()
 		delta_date = date_now - date_begin
-		if delta_date.days > date_interval:
+		if delta_date.days > control.date_interval:
 			date = time.strftime("%Y%m%d", time.localtime())
-			file_name = 'temperature_'+date+'.log'
-			file_exist = os.path.exists(file_name)
+			self.file_name = 'temperature_'+date+'.log'
 		else:
 			pass
 
+		file_exist = os.path.exists(self.file_name)
 		if file_exist:
-			logging.warning(t)
+			logging.warning(temp_string)
 		else:
-			f = open(file_name,'a')
-			header = 'DATE, A, B, C, D, E, F, G'
+			f = open(self.file_name,'a')
+			header = 'Date, 1st Stage, Shield, 2nd Stage #1, 2nd Stage #2, Magnet inner, Magnet outter, Switch, Magnet support, He Pot'
 			f.write(header)
 			f.write('\n')
 			f.close()
 
-			logging.basicConfig(filename=file_name, filemode='a', format='%(asctime)s,%(message)s', level=logging.WARNING)
-			logging.warning(t)
+			logging.basicConfig(filename=self.file_name, filemode='a', format='%(asctime)s,%(message)s', level=logging.WARNING)
+			logging.warning(temp_string)
 		return
 
 	def read_temp_heater(self):
@@ -412,10 +409,13 @@ class TControl:
 
 if __name__ == '__main__':
 
+	date_begin = datetime.now()
+	date = time.strftime("%Y%m%d", time.localtime())
+	file_name = 'temperature_'+date+'.log'
 	# Initialize a PID controller for the 4He Pot
 	pid = pid_control.PID(p=500,i=10.,d=0,derivator=0,integrator=0,integrator_max=250,integrator_min=-50)
 
-	control = TControl()
+	control = TControl(file_name)
 
 	control.get_loop_params()
 	control.read_temp_heater()
