@@ -46,6 +46,7 @@ import utils.pid_control as pid_control
 import utils.socket_subs as socket_subs
 import utils.visa_subs as visa_subs
 
+date_begin = datetime.datetime.now()
 date = time.strftime("%Y%m%d", time.localtime())
 file_name = 'temperature_'+date+'.log'
 file_exist = os.path.exists(file_name)
@@ -137,6 +138,9 @@ class TControl:
 		self.visa.write("RAMP 1,0,0")
 		self.visa.write("RAMP 2,0,0")
 
+		#set date interval to creat noew log file, default = 1 day(s)
+		date_interval = 1
+
 		return
 
 	# The ls340 often formats replies X,Y,Z -> return selection of values
@@ -208,6 +212,15 @@ class TControl:
 			#self.pot_temperature = res[8]
 			if Ch==109:
 				self.pot_temperature = res
+
+		date_now = datetime.datetime.now()
+		delta_date = date_now - date_begin
+		if delta_date.days > date_interval:
+			date = time.strftime("%Y%m%d", time.localtime())
+			file_name = 'temperature_'+date+'.log'
+			file_exist = os.path.exists(file_name)
+		else:
+			pass
 
 		if file_exist:
 			logging.warning(t)
