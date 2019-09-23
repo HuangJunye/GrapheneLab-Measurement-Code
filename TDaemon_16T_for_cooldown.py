@@ -218,7 +218,7 @@ class TControl:
 			self.file_name = 'temperature_'+date+'.log'
 		else:
 			pass
-		
+
 		# check if file already exist
 		file_exist = os.path.exists(self.file_name)
 		if not file_exist:
@@ -230,7 +230,7 @@ class TControl:
 			f.close()
 		else:
 			pass
-			
+
 		fileh = logging.FileHandler(self.file_name, 'a')
 		formatter = logging.Formatter('%(asctime)s,%(message)s', '%Y-%m-%d %H:%M:%S')
 		fileh.setFormatter(formatter)
