@@ -345,6 +345,7 @@ class TControl:
 
 		status_string += "He Pot Temp = %.2f K;" % self.pot_temperature
 		status_string += "status message = %d\n" % self.status_msg
+		temp_string += "%.2f," % (self.pot_temperature)
 		print(status_string)
 
 		date_now = datetime.now()
