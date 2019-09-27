@@ -362,7 +362,7 @@ class TControl:
 		if not file_exist:
 			# create a new file if file doesn't exist, and add header
 			f = open(self.file_name,'a')
-			header = 'Date, 1st Stage, Shield, 2nd Stage #1, 2nd Stage #2, Magnet inner, Magnet outter, Switch, Magnet support, He Pot'
+			header = 'Date,VTI,Probe,He Pot'
 			f.write(header)
 			f.write('\n')
 			f.close()
