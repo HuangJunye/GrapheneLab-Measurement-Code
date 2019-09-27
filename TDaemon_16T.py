@@ -38,13 +38,12 @@ import re as res
 import time
 from scipy import interpolate
 from datetime import datetime
+import os
 
 import numpy as np
 import utils.pid_control as pid_control
 import utils.socket_subs as socket_subs
 import utils.visa_subs as visa_subs
-
-logging.basicConfig(filename='temp.log', filemode='a', format='%(asctime)s,%(message)s', level=logging.WARNING)
 
 class TControl:
 
@@ -61,7 +60,7 @@ class TControl:
 	"""
 	# Initialization call, initialize LS340 visa and start the server
 	# server always runs at 18871
-	def __init__(self):
+	def __init__(self, file_name):
 		self.visa = visa_subs.initialize_gpib(12, 0, query_delay="0.04")
 		# start the server
 		address = ('localhost',18871)
@@ -71,7 +70,7 @@ class TControl:
 		self.pot_visa.write("FORM:ELEM READ")  #Configure the 2700 to only return resistance
 		calibration_path = "d:\eoin\programs\Thermometers\\11)He Pot.txt"
 		calibration = np.genfromtxt(calibration_path,skip_header=1)
-		self.He_pot_fn = interpolate.interp1d(np.flipud(calibration[:,1]),
+		self.he_pot_fn = interpolate.interp1d(np.flipud(calibration[:,1]),
 							np.flipud(calibration[:,0]))
 
 		self.temperature = np.zeros((2,))
@@ -126,6 +125,10 @@ class TControl:
 		self.visa.write("RAMP 1,0,0")
 		self.visa.write("RAMP 2,0,0")
 
+		#set date interval to creat noew log file, default = 1 day(s)
+		self.date_interval = 1
+		self.file_name = file_name
+
 		return
 
 	# The ls340 often formats replies X,Y,Z -> return selection of values
@@ -165,10 +168,10 @@ class TControl:
 	def read_pot_temperature(self):
 		reply = self.pot_visa.ask(":FETC?")
 		reply = reply.split(",")
-		Res = float(reply[0])
-		self.pot_temperature = self.He_pot_fn(Res)
+		res = float(reply[0])
+		self.pot_temperature = self.he_pot_fn(res)
 		#print "%f" % self.pot_temperature
-		return Res
+		return res
 
 	def read_temp_heater(self):
 		# read the temperature and heater outputs
@@ -342,18 +345,56 @@ class TControl:
 
 		status_string += "He Pot Temp = %.2f K;" % self.pot_temperature
 		status_string += "status message = %d\n" % self.status_msg
+		temp_string += "%.2f," % (self.pot_temperature)
 		print(status_string)
-		logging.warning(temp_string)
+
+		date_now = datetime.now()
+		delta_date = date_now - date_begin
+		# create new file every interval, specified by date_interval
+		if delta_date.days >= control.date_interval:
+			date = time.strftime("%Y%m%d", time.localtime())
+			self.file_name = 'temperature_'+date+'.log'
+		else:
+			pass
+
+		# check if file already exist
+		file_exist = os.path.exists(self.file_name)
+		if not file_exist:
+			# create a new file if file doesn't exist, and add header
+			f = open(self.file_name,'a')
+			header = 'Date, 1st Stage, Shield, 2nd Stage #1, 2nd Stage #2, Magnet inner, Magnet outter, Switch, Magnet support, He Pot'
+			f.write(header)
+			f.write('\n')
+			f.close()
+		else:
+			pass
+
+		fileh = logging.FileHandler(self.file_name, 'a')
+		formatter = logging.Formatter('%(asctime)s,%(message)s', '%Y-%m-%d %H:%M:%S')
+		fileh.setFormatter(formatter)
+
+		log = logging.getLogger()  # root logger
+		for hdlr in log.handlers[:]:  # remove all old handlers
+			log.removeHandler(hdlr)
+		log.addHandler(fileh)      # set the new handler
+
+		#logging.basicConfig(filename=self.file_name, filemode='a', format='%(asctime)s,%(message)s', datefmt='%Y-%m-%d %H:%M:%S', level=logging.WARNING)
+		log.warning(temp_string)
+
 		self.last_status_time = datetime.now()
 		return
 
 
 if __name__ == '__main__':
 
+	date_begin = datetime.now()
+	date = time.strftime("%Y%m%d", time.localtime())
+	file_name = 'temperature_'+date+'.log'
+
 	# Initialize a PID controller for the 4He Pot
 	pid = pid_control.PID(p=500,i=10.,d=0,derivator=0,integrator=0,integrator_max=250,integrator_min=-50)
 
-	control = TControl()
+	control = TControl(file_name)
 
 	control.get_loop_params()
 	control.read_temp_heater()
@@ -386,9 +427,9 @@ if __name__ == '__main__':
 		if update_time.seconds/60.0 >= control.status_interval:
 			control.print_status()
 
-		#PotRes = PotResistance(pot_visa)
-		#PotT = He_pot_fn(PotRes)
-		#print PotT, PotRes
+		#Potres = Potresistance(pot_visa)
+		#PotT = he_pot_fn(Potres)
+		# print PotT, Potres
 		# Now we do some PID stuff in software to control the He Pot
 		new_pid = pid.update(control.pot_temperature)
 		#print "%.3f, %.3f" % (control.temperature[2],new_pid)

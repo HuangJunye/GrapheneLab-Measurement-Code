@@ -15,13 +15,13 @@ last edited : Apr 2019
 
 """
 import asyncore
-#?
+import logging
 import time
 from collections import deque
 from datetime import datetime
+import os
 
 import numpy as np
-
 import utils.pid_control as pid_control
 import utils.socket_subs as socket_subs
 import utils.visa_subs as visa_subs
@@ -33,7 +33,7 @@ class TControl:
 	Server, server always runs at 18871
 	"""
 
-	def __init__(self):
+	def __init__(self, file_name):
 		#?
 		self.pico_visa = visa_subs.initialize_gpib(20, 0, query_delay="0.04")
 		self.pico_visa.write("HDR0")
@@ -93,6 +93,10 @@ class TControl:
 			p=20., i=.5, d=0, derivator=0, integrator=0,
 			integrator_max=60000, integrator_min=-2000)
 		self.pid_output = None
+
+		#set date interval to creat noew log file, default = 1 day(s)
+		self.date_interval = 1
+		self.file_name = file_name
 
 		return
 
@@ -291,7 +295,42 @@ class TControl:
 		status_string = "%s = %.2f K; PID output = %d; " % (self.sensor, self.temperature, self.pid_output)
 		status_string += "Status message = %d; " % self.status_msg
 		status_string += "P = %.2f, I = %.2f, D = %.2f\n" % (self.pid.p_value, self.pid.i_value, self.pid.d_value)
+		temp_string = "%.2f" % (self.temperature)
 		print(status_string)
+
+		date_now = datetime.now()
+		delta_date = date_now - date_begin
+		# create new file every interval, specified by date_interval
+		if delta_date.days >= control.date_interval:
+			date = time.strftime("%Y%m%d", time.localtime())
+			self.file_name = 'temperature_'+date+'.log'
+		else:
+			pass
+
+		# check if file already exist
+		file_exist = os.path.exists(self.file_name)
+		if not file_exist:
+			# create a new file if file doesn't exist, and add header
+			f = open(self.file_name,'a')
+			header = 'Date, 1st Stage, Shield, 2nd Stage #1, 2nd Stage #2, Magnet inner, Magnet outter, Switch, Magnet support, He Pot'
+			f.write(header)
+			f.write('\n')
+			f.close()
+		else:
+			pass
+
+		fileh = logging.FileHandler(self.file_name, 'a')
+		formatter = logging.Formatter('%(asctime)s,%(message)s', '%Y-%m-%d %H:%M:%S')
+		fileh.setFormatter(formatter)
+
+		log = logging.getLogger()  # root logger
+		for hdlr in log.handlers[:]:  # remove all old handlers
+			log.removeHandler(hdlr)
+		log.addHandler(fileh)      # set the new handler
+
+		#logging.basicConfig(filename=self.file_name, filemode='a', format='%(asctime)s,%(message)s', datefmt='%Y-%m-%d %H:%M:%S', level=logging.WARNING)
+		log.warning(temp_string)
+
 		self.last_status_time = datetime.now()
 		return
 
@@ -321,9 +360,12 @@ calibrations = {
 
 if __name__ == '__main__':
 
+	date_begin = datetime.now()
+	date = time.strftime("%Y%m%d", time.localtime())
+	file_name = 'temperature_'+date+'.log'
 	# Initialize a PID controller
 
-	control = TControl()
+	control = TControl(file_name)
 
 	# TODO : use dictionary to link channel sensor name
 	#sensor_channels = {0:"SO703",5:"CERNOX"}
