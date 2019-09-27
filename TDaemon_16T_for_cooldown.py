@@ -68,13 +68,33 @@ class TControl:
 		address = ('localhost',18871)
 		self.server = socket_subs.SockServer(address)
 
-		t_sensor_name = ["1st stage", "Shield", "2nd stage #1", "2nd Stage #2", "Magnet inner", "Magner outer", "Switch", "Magnet support", "He Pot", "VTI upper HEx"]
-		t_sensor_path="d:\eoin\programs\Thermometers\\"
-		t_sensor_calibration = ["1)1st Stage.txt", "2)Shield.txt", "3)2nd Stage 1.txt", "4)2nd Stage 2.txt", "5)Magnet Inner.txt", "6)Magnet Outer.txt", "7)Switch.txt", "8)Magnet Support.txt", "9)He Pot.txt", "10)VTI Upper HEx.txt"]
+		self.t_sensor_name = [
+			"1st stage",
+			"Shield",
+			"2nd stage #1",
+			"2nd Stage #2",
+			"Magnet inner",
+			"Magnet outer",
+			"Switch",
+			"Magnet support",
+			"He Pot"
+		]
+		self.t_sensor_path="d:\eoin\programs\Thermometers\\"
+		self.t_sensor_calibration = [
+			"1)1st Stage.txt",
+			"2)Shield.txt",
+			"3)2nd Stage 1.txt",
+			"4)2nd Stage 2.txt",
+			"5)Magnet Inner.txt",
+			"6)Magnet Outer.txt",
+			"7)Switch.txt",
+			"8)Magnet Support.txt",
+			"9)He Pot.txt"
+		]
 		self.calibration_x = np.zeros((129,11))
 		self.calibration_y = np.zeros((129,11))
 		for i in range(1, 10):
-			calibration_path = t_sensor_path+t_sensor_calibration[i-1]
+			calibration_path = self.t_sensor_path+self.t_sensor_calibration[i-1]
 			calibration_xy = np.genfromtxt(calibration_path,skip_header=1)
 			self.calibration_x[:,i-1] = np.flipud(calibration_xy[:,1])
 			self.calibration_y[:,i-1] = np.flipud(calibration_xy[:,0])
@@ -186,14 +206,10 @@ class TControl:
 		return res
 
 	def read_all_temperature(self):
-		t_sensor_name = ["1st stage", "Shield", "2nd stage #1", "2nd Stage #2", "Magnet inner", "Magner outer", "Switch", "Magnet support", "He Pot", "VTI upper HEx"]
-		t_sensor_path="d:\eoin\programs\Thermometers\\"
-		t_sensor_calibration = ["1)1st Stage.txt", "2)Shield.txt", "3)2nd Stage 1.txt", "4)2nd Stage 2.txt", "5)Magnet Inner.txt", "6)Magnet Outer.txt", "7)Switch.txt", "8)Magnet Support.txt", "9)He Pot.txt", "10)VTI Upper HEx.txt"]
-		#t_sensor_calibration = ["1)1st Stage.txt", "2)Shield.txt", "3)2nd Stage 1.txt", "4)2nd Stage 2.txt", "5)Magnet Inner.txt", "6)Magnet Outer.txt", "7)Switch.txt", "8)Magnet Support.txt", "9)He Pot.txt", "10)VTI Upper HEx.txt"]
 		temp_string = ''
-		for i in range(1, 10):
+		for i in range(9):
 			self.pot_visa.write("INIT:CONT OFF")
-			Ch = 100 + i
+			Ch = 100 + 1 + i
 			message=" ".join(("ROUT:CLOS (@","%d" % Ch))+")"
 			self.pot_visa.write(message)
 			#self.pot_visa.write("INIT")
@@ -202,9 +218,9 @@ class TControl:
 			reply = reply.split(",")
 			res = list(map(float, reply))
 
-			self.he_pot_fn = interpolate.interp1d(self.calibration_x[:,i-1], self.calibration_y[:,i-1])
+			self.he_pot_fn = interpolate.interp1d(self.calibration_x[:,i], self.calibration_y[:,i])
 			res=self.he_pot_fn(res)
-			print("%s = %f K" % (t_sensor_name[i-1], res))
+			print("%s = %f K" % (self.t_sensor_name[i], res))
 			temp_string += "%.3f," % res
 			#self.pot_temperature = res[8]
 			if Ch==109:
@@ -224,7 +240,10 @@ class TControl:
 		if not file_exist:
 			# create a new file if file doesn't exist, and add header
 			f = open(self.file_name,'a')
-			header = 'Date, 1st Stage, Shield, 2nd Stage #1, 2nd Stage #2, Magnet inner, Magnet outter, Switch, Magnet support, He Pot'
+			header = 'Date'
+			for sensor_name in self.t_sensor_name:
+				header = header + ',' + sensor_name
+			#header = 'Date,1st Stage,Shield,2nd Stage #1,2nd Stage #2,Magnet inner,Magnet outter,Switch,Magnet support,He Pot'
 			f.write(header)
 			f.write('\n')
 			f.close()
