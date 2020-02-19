@@ -49,7 +49,7 @@ def device_device_2d(
 
     for i in range(num_of_inst):
         plot_2d_window[i] = rpg.QtGui.QMainWindow()
-        plot_2d_window[i].resize(500, 500)
+        plot_2d_window[i].resize(800, 800)
         view_box[i] = rpg.ViewBox()
         view_box[i].enableAutoRange()
         image_view[i] = rpg.ImageView(view=rpg.PlotItem(viewBox=view_box[i]))

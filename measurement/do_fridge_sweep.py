@@ -79,7 +79,7 @@ def do_fridge_sweep(
     # Setup L plot windows
     graph_window = rpg.GraphicsWindow(title="Fridge sweep...")
     plot_data = graph_proc.transfer([])
-    graph_window.resize(500, 150 * num_of_inst)
+    graph_window.resize(1000, 800)
     plot = []
     curve = []
     for i in range(num_of_inst):

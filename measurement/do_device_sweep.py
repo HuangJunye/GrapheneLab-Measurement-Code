@@ -66,7 +66,7 @@ def do_device_sweep(
     # Setup L plot windows
     if make_plot:
         graph_window = rpg.GraphicsWindow(title="Device sweep...")
-        graph_window.resize(500, 150 * num_of_inst)
+        graph_window.resize(1000, 800)
         plot = [None] * num_of_inst
         curve = [None] * num_of_inst
         for i in range(num_of_inst):

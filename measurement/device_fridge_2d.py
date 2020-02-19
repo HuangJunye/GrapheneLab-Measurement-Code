@@ -86,7 +86,7 @@ def device_fridge_2d(
     if sweep_device:
         for i in range(num_of_inst):
             plot_2d_window[i] = rpg.QtGui.QMainWindow()
-            plot_2d_window[i].resize(500, 500)
+            plot_2d_window[i].resize(800, 800)
             view_box[i] = rpg.ViewBox(invertY=True)
             image_view[i] = rpg.ImageView(view=rpg.PlotItem(viewBox=view_box[i]))
             plot_2d_window[i].setCentralWidget(image_view[i])
