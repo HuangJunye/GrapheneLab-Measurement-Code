@@ -116,7 +116,7 @@ def do_device_sweep(
 
     start_time = datetime.now()
 
-    writer, file_path, net_dir = measurement_subs.open_csv_file(
+    writer, file_path, net_dir, csv_file = measurement_subs.open_csv_file(
         data_file, start_time, read_inst, sweep_inst=[sweep_inst],
         set_inst=set_inst, comment=comment, network_dir=network_dir
     )
@@ -150,6 +150,7 @@ def do_device_sweep(
         # Save the data
         for j in range(sample):
             writer.writerow(data_vector[j, :])
+            csv_file.flush()
 
         # Package the data and send it for plotting
 
