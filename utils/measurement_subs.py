@@ -130,7 +130,7 @@ def open_csv_file(
 	file_writer.writerow([start_time])
 	csv_file.flush()
 
-	column_string = "B (T), T(mK) "
+	column_string = "B (T), T(K)"
 	
 	for inst in sweep_inst:
 		csv_file.write("".join(("SWEEP: ", inst.description())))
