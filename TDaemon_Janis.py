@@ -91,8 +91,8 @@ class TControl():
 		return
 
 	# The ls340 often formats replies X,Y,Z -> return selection of values
-	def ls_340_ask_multi(self,Query,Return):
-		reply = self.visa.ask(Query)
+	def ls_340_query_multi(self,Query,Return):
+		reply = self.visa.query(Query)
 		reply = reply.split(",")
 		answer = list()
 		for i in Return:
@@ -103,20 +103,20 @@ class TControl():
 	def get_loop_params(self):
 		for i,v in enumerate(self.loop_number):
 			# enabled?
-			reply = self.ls_340_ask_multi(" ".join(("Cset?","%d" % v)),[2])
+			reply = self.ls_340_query_multi(" ".join(("Cset?","%d" % v)),[2])
 			self.loop_enable[i] = bool(int(reply[0]))
 			# Control mode
-			reply = self.visa.ask(" ".join(("CMODE?","%d" % v)))
+			reply = self.visa.query(" ".join(("CMODE?","%d" % v)))
 			if reply == "2":
 				self.zone_control[i] = True
 			else:
 				self.zone_control[i] = False
 			# PIDs
-			reply = self.ls_340_ask_multi(" ".join(("PID?","%d" % v)),[0,1,2])
+			reply = self.ls_340_query_multi(" ".join(("PID?","%d" % v)),[0,1,2])
 			for j,u in enumerate(reply):
 				self.pid_vals[j,i] = float(u)
 			# setpoints
-			reply = self.visa.ask(" ".join(("setP?","%d" % (i+1))))
+			reply = self.visa.query(" ".join(("setP?","%d" % (i+1))))
 			self.set_temp[i] = float(reply)
 		return
 
@@ -125,12 +125,12 @@ class TControl():
 		old_temp = self.temperature
 		for i,v in enumerate(self.sensor_location):
 			# temperature
-			reply = self.visa.ask(" ".join(("KRDG?","%s" % v)))
+			reply = self.visa.query(" ".join(("KRDG?","%s" % v)))
 			self.temperature[i] = float(reply)
 		self.delta_temp = self.temperature - old_temp
 		# read the heaters
 		for i,v in enumerate(self.heater_command):
-			reply = self.visa.ask(v)
+			reply = self.visa.query(v)
 			self.heater_current[i] = float(reply)
 		return
 
@@ -191,10 +191,10 @@ class TControl():
 						self.sweep_direction = -1.0
 					print("==============sweep_direction = %.3f\t " % self.sweep_direction)
 					# Put the LS340 into ramp mode
-					repl = self.visa.ask("RAMP?1")
+					repl = self.visa.query("RAMP?1")
 					print("%s" % repl)
 					self.visa.write("RAMP 1,1,%.3f" % self.sweep_rate)
-					repl = self.visa.ask("RAMP?1")
+					repl = self.visa.query("RAMP?1")
 					print("%s" % repl)
 
 					#update all ZONE parameters using a new ramp rate
