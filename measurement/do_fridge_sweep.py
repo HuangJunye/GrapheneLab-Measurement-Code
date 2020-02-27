@@ -79,7 +79,7 @@ def do_fridge_sweep(
     # Setup L plot windows
     graph_window = rpg.GraphicsWindow(title="Fridge sweep...")
     plot_data = graph_proc.transfer([])
-    graph_window.resize(500, 150 * num_of_inst)
+    graph_window.resize(1000, 800)
     plot = []
     curve = []
     for i in range(num_of_inst):
@@ -114,7 +114,7 @@ def do_fridge_sweep(
 
     start_time = datetime.now()
 
-    writer, file_path, net_dir = measurement_subs.open_csv_file(
+    writer, file_path, net_dir, csv_file = measurement_subs.open_csv_file(
         data_file, start_time, read_inst, set_inst=set_inst,
         comment=comment, network_dir=network_dir
     )
@@ -182,6 +182,7 @@ def do_fridge_sweep(
         # Save the data
         for j in range(sample):
             writer.writerow(data_vector[j, :])
+            csv_file.flush()
 
         to_plot = np.empty((num_of_inst + 1))
         if b_sweep:
