@@ -116,20 +116,21 @@ def open_csv_file(
 	# Try to make a file called ...-0.dat in data else ...-1.dat etc.
 	i = 0
 	while True:
-		file = "".join((data_dir, "\\", file_name, "-", "%d" % i, ".dat"))
+		file_path = "".join((data_dir, "\\", file_name, "-", "%d" % i, ".dat"))
 		try:
-			os.stat(file)
+			os.stat(file_path)
 			i = i+1
 			pass
 		except OSError:
-			csv_file = open(file, "w")
+			csv_file = open(file_path, "w")
 			file_writer = csv.writer(csv_file, delimiter=',')
 			break
 	
 	# Write the starttime and a description of each of the instruments
 	file_writer.writerow([start_time])
+	csv_file.flush()
 
-	column_string = "B (T), T(mK) "
+	column_string = "B (T), T(K)"
 	
 	for inst in sweep_inst:
 		csv_file.write("".join(("SWEEP: ", inst.description())))
@@ -148,8 +149,8 @@ def open_csv_file(
 	csv_file.write("\n")
 	csv_file.write(column_string)
 
-	print("Writing to data file %s\n" % file)
-	return file_writer, file, net_dir
+	print("Writing to data file %s\n" % file_path)
+	return file_writer, file_path, net_dir, csv_file
 
 
 def generate_device_sweep(start, stop, step, mid=[]):

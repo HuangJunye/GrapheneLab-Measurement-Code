@@ -30,7 +30,7 @@ class LS475Gaussmeter(Instrument):
 
     def read_data(self):
         """ Read magnetic field """
-        reply = self.visa.ask(":RDGFIELD?")
+        reply = self.visa.query(":RDGFIELD?")
         self.data = [reply]
         pass
 
@@ -44,7 +44,7 @@ class LS475Gaussmeter(Instrument):
         pass
 
     def ramp(self, finish_value):
-        time1 = float(self.visa.ask(":RDGFIELD?"))
+        time1 = float(self.visa.query(":RDGFIELD?"))
         time2 = 4 * abs(finish_value - time1) / 50
         self.set_output(finish_value)
         print("Ramping to Field Value")

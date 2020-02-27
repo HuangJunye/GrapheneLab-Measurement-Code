@@ -31,6 +31,18 @@ Temperature and Magnet controllers:
 ## Live plotting using PyQtGraph
 Measurement results are plotted live using PyQtGraph.
 
+## Installation instructions
+1. Download or clone the `master` branch of the repository
+1. Unzip and copy folder to Documents folder
+1. Rename folder from "GraphenLab-Measurement-Code-master" to "GraphenLab-Measurement-Code"
+1. Install [Anaconda](https://www.anaconda.com/) and [NI-VISA](https://www.ni.com/en-sg/support/downloads/drivers/download.ni-visa.html#305862)
+1. After installation of Anaconda and NI-VISA, you can open Anaconda Prompt to install two python packages: PyVisa and PyQtGraph. Type in Anaconda Prompt to install PyVisa: 
+```pip install pyvisa```
+When the installation of PyVisa finishes, install PyQtGraph:
+```pip install pygtgraph```
+1. If you don't need temperature and magnetic field control, you can check `example notebook` folder to start measurements.
+1. If you need temperature control and/or magnetic field control, you need to configure `t_daemon` and/or `m_daemon` to work with your temperature controller and/or magnet controller. If you are unsure how to do that, raise an issue or contact Huang Junye for assistance: [h.jun.ye@gmail.com](mailto:h.jun.ye@gmail.com)
+
 ## Future work
 - Deploy to Janis, 9T, 12T and 16 system
 - Modular design for TDaemon and MDaemon to allow more robust support of vairous systems.
