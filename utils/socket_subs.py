@@ -72,10 +72,10 @@ class SockHandler(asyncore.dispatcher):
 	def handle_write(self):
 		if len(self.to_send) > self.chunk_size:
 			# if the buffer is too long bin some
-			sent = self.send(self.to_send[-self.chunk_size:].encode("utf-8"))	
+			sent = self.send(self.to_send[-self.chunk_size:].encode())	
 			self.to_send = ""
 		else:
-			sent = self.send(self.to_send[:self.chunk_size].encode("utf-8"))
+			sent = self.send(self.to_send[:self.chunk_size].encode())
 			self.to_send = self.to_send[sent:]
 
 	def handle_read(self):
