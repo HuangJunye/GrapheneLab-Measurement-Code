@@ -156,7 +156,7 @@ class TControl():
 	# SWP ...  -  sweep the probe temperature
 	def read_msg(self,msg):
 		tindex = 0
-		msg = msg.split(" ")
+		msg = msg.decode("utf-8").split(" ")
 		if msg[0] == "set":
 			try:
 				new_set = float(msg[1])
